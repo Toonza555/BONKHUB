@@ -11,3 +11,5 @@
 - [ 🎯 ] Blade Ball
 - [ 🎯 ] All Sar Tower Defense
 - [ 🎯 ] King Legacy
+# Get Script 👇👇
+[ https://bonkhubnextgen.000webhost.com ]
