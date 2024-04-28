@@ -8,8 +8,11 @@
 - [ 🎯 ] Blox Fruits
 - [ ✅ ] Legend Of Speed
 - [ ✅ ] Bee Swarm Simulator
-- [ 🎯 ] Blade Ball
+- [ ⚙️ ] Blade Ball
 - [ 🎯 ] All Sar Tower Defense
 - [ 🎯 ] King Legacy
+- [ ✅ ] Build a Boat For Treasure
+- [ 🟡 ] Haze Piece
+- [ ⚙️ ] Pet Catcher
 # Get Script 👇👇
 [ https://bonkhubnextgen.000webhost.com ]
