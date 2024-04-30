@@ -29,6 +29,7 @@ MODILEGUISOMEXHUB.MouseButton1Click:Connect(
 )
 do
     if game:GetService("CoreGui"):FindFirstChild("DinoUI") then
+game:GetService("CoreGui"):FindFirstChild("DinoUI"):Destroy()
     end
 end
 
