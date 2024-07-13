@@ -293,12 +293,6 @@ function Console:Window(consoledebugger)
 
         --  end
     end
-
-    return ConsoleLog
-end
-
-return Console
-
 local BonkConsole = Instance.new("ScreenGui")
     local BonkButton = Instance.new("TextButton")
     local BonkButtonHUI = Instance.new("UICorner")
@@ -334,3 +328,8 @@ local BonkConsole = Instance.new("ScreenGui")
         MODILEMAGE.Position = UDim2.new(0.25, 0, 0.25, 0)
         MODILEMAGE.Size = UDim2.new(0, 25, 0, 25)
         MODILEMAGE.Image = "rbxassetid://11262159835"
+
+    return ConsoleLog
+end
+
+return Console
