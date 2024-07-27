@@ -80,4 +80,6 @@ elseif B_426 == 2788229376 or string.find(B_425,"Da Hood") then --Da Hood
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Dahood"..B_431))()
 elseif B_426 == 662417684 or string.find(B_425,"Lucky Block") then --Lucky Block
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/LuckyBlock"..B_431))()
+elseif B_426 == 3351674303 or string.find(B_425,"Driving Empire") then --Driving Empire
+    B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/DrivingEmpire"..B_431))()
 end
