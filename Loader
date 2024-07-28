@@ -44,7 +44,7 @@ end
 
 function B_100.OnInvoke(B_106)
     if B_106 == "Copy Link Discord" then
-        setclipboard("https://discord.com/invite/VxSYTWBXWm")
+        setclipboard("https://discord.com/invite/wXQpQRrvuT")
         wait(.5)
         B_107.StarterGui:B_102("SendNotification", {
             Title = "Notify !"; 
