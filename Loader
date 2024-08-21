@@ -42,31 +42,33 @@ function B_427(B_429)
 end
 
 
-function B_100.OnInvoke(B_106)
-    if B_106 == "Copy Link Discord" then
+local StarterGui = game:GetService("StarterGui") -- not sure why you used CoreGui
+local bindable = Instance.new("BindableFunction")
+
+function bindable.OnInvoke(response)
+    if response == "Yes" then
         setclipboard("https://discord.com/invite/wXQpQRrvuT")
         wait(.5)
-        B_107.StarterGui:SetCore("SendNotification", {
-            Title = "Notify !"; 
-            Text = "Link Coppid ! | Thanks for join";
-            Icon = "rbxassetid://11262159835";
-            Duration = 5; 
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "Notify !",
+            Text = "Link Coppid ! | Thanks for join",
+            Icon = "rbxassetid://11262159835",
+            Duration = 5,
         })
     end
 end
 
-local function B_104()
-    B_107.StarterGui:SetCore("SendNotification", {
-        Title = "Notify !";
-        Text = "Please Join Discord";
-        Icon = "rbxassetid://11262159835";
-        Duration = 500; 
-        Button1 = "Copy Link Discord"; 
-        Callback = B_103;
-    })
-end
+StarterGui:SetCore("SendNotification", {
+	Title = "Join Discord !",
+    Text = "Please Join Discord",
+    Icon = "rbxassetid://11262159835",
+	Duration = 500,
+	Callback = bindable,
+	Button1 = "Yes",
+	Button2 = "No"
+})
 
-B_104()
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Toonza555/BONKHUB/main/AllMap/Webhook.lua"))()
 
 print("loading")
