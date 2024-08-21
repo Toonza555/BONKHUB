@@ -46,7 +46,7 @@ function B_100.OnInvoke(B_106)
     if B_106 == "Copy Link Discord" then
         setclipboard("https://discord.com/invite/wXQpQRrvuT")
         wait(.5)
-        B_107.StarterGui:B_102("SendNotification", {
+        B_107.StarterGui:SetCore("SendNotification", {
             Title = "Notify !"; 
             Text = "Link Coppid ! | Thanks for join";
             Icon = "rbxassetid://11262159835";
