@@ -84,6 +84,6 @@ elseif B_426 == 3351674303 or string.find(B_425,"Driving Empire") then --Driving
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/DrivingEmpire"..B_431))()
 elseif B_426 == 537413528 or string.find(B_425,"Build A Boat") then --Build A Boat
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/BuildABoat"..B_431))()
-elseif B_426 == 537413528 or string.find(B_425,"Legend Of Speed") then --Legend of Speed
+elseif B_426 == 3101667897 or string.find(B_425,"Legend Of Speed") then --Legend of Speed
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Legend_of_Speed"..B_431))()
 end
