@@ -42,7 +42,7 @@ function B_427(B_429)
 end
 
 
-local StarterGui = game:GetService("StarterGui") -- not sure why you used CoreGui
+local StarterGui = game:GetService("StarterGui")
 local bindable = Instance.new("BindableFunction")
 
 function bindable.OnInvoke(response)
