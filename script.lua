@@ -100,7 +100,8 @@ elseif B_426 == 13772394625 or string.find(B_425,"Blade Ball") then --Blade Ball
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/BladeBall"..B_431))()
 elseif B_426 == 286090429 or string.find(B_425,"Arsenal") then --Arsenal
     B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/Arsenal"..B_431))()
-
+elseif B_426 == 17534163435 or string.find(B_425,"Dungeon RNG") then --Dungeon Rng
+    B_427(B_107:HttpGet("https://raw.githubusercontent.com/"..B_428.."/BONKHUB/main/"..B_430.."/DungeonRng"..B_431))()
 else
     game.StarterGui:SetCore("SendNotification", {
     Title = "Notify !",
