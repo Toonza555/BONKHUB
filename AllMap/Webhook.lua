@@ -7,6 +7,9 @@ B_444 = "Market"..B_423.."Service"
 
 local B_424 = game:GetService(B_444):GetProductInfo(B_426);
 local B_425 = B_424.Name
+local playerName = game:GetService("Players").LocalPlayer.Name
+local maskedName = string.sub(playerName, 1, 1) .. string.rep("*", #playerName - 2) .. string.sub(playerName, #playerName, #playerName)
+
 
 local webhook1 = request({
     Url = "https://discord.com/api/webhooks/1250172646314999900/MxoLaxhat_ZcJ2cdGTcT5nVHqko7qMY7EwZ3sfYo0goln6CEbf9F32V6dNM9wqsumsl_",
@@ -24,7 +27,7 @@ local webhook1 = request({
                 ["fields"] = {
                     {
                         ["name"] = "👥 **Players** 👥",
-                        ["value"] = game:GetService("Players").LocalPlayer.Name,
+                        ["value"] = maskedName,
                         ["inline"] = false
                     },
                     {
