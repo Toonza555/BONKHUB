@@ -2377,6 +2377,8 @@ Components.Tab = (function()
 	return TabModule
 end)()
 ]]
+
+--[[ 2
 Components.Tab = (function()
 	local New = Creator.New
 	local Spring = Flipper.Spring.new
@@ -2727,6 +2729,368 @@ Components.Tab = (function()
 
 	return TabModule
 end)()
+]]
+
+Components.Tab = (function()
+	local New = Creator.New
+	local Spring = Flipper.Spring.new
+	local Instant = Flipper.Instant.new
+	local Components = Components
+
+	local TabModule = {
+		Window = nil,
+		Tabs = {},
+		Containers = {},
+		SelectedTab = 0,
+		TabCount = 0,
+	}
+
+	function TabModule:Init(Window)
+		TabModule.Window = Window
+		return TabModule
+	end
+
+	function TabModule:GetCurrentTabPos()
+		local TabHolderPos = TabModule.Window.TabHolder.AbsolutePosition.Y
+		local TabPos = TabModule.Tabs[TabModule.SelectedTab].Frame.AbsolutePosition.Y
+
+		return TabPos - TabHolderPos
+	end
+
+	function TabModule:New(Title, Icon, Parent)
+		local Window = TabModule.Window
+		local Elements = Library.Elements
+
+		TabModule.TabCount = TabModule.TabCount + 1
+		local TabIndex = TabModule.TabCount
+
+		local Tab = {
+			Selected = false,
+			Name = Title,
+			Type = "Tab",
+		}
+
+		if not fischbypass then 
+			if Library:GetIcon(Icon) then
+				Icon = Library:GetIcon(Icon)
+			end
+
+			if Icon == "" or nil then
+				Icon = nil
+			end
+		end
+
+		-- Selection indicator - แก้ไขตำแหน่งและสี
+		local SelectionIndicator = New("Frame", {
+			Size = UDim2.new(0, 3, 0, 20),
+			Position = UDim2.new(0, 0, 0.5, -10),
+			BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+			BorderSizePixel = 0,
+			BackgroundTransparency = 1,
+			ZIndex = 3, -- เพิ่ม ZIndex เพื่อให้อยู่ด้านหน้า
+			ThemeTag = {
+				BackgroundColor3 = "AccentColor",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 2),
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 170, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 130, 255))
+				},
+				Rotation = 90,
+			}),
+		})
+
+		-- Hover glow effect - แก้ไขสีให้แตกต่างจาก Selection Indicator
+		local HoverGlow = New("Frame", {
+			Size = UDim2.new(1, 4, 1, 4),
+			Position = UDim2.new(0, -2, 0, -2),
+			BackgroundColor3 = Color3.fromRGB(70, 120, 200), -- เปลี่ยนสีให้แตกต่าง
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 1, -- ให้อยู่ด้านหลัง
+			ThemeTag = {
+				BackgroundColor3 = "AccentColorDimmed", -- ใช้ theme สีที่อ่อนกว่า
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 8),
+			}),
+		})
+		
+		Tab.Frame = New("TextButton", {
+			Size = UDim2.new(1, 0, 0, 38),
+			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+			Parent = Parent,
+			ZIndex = 2, -- ให้อยู่ระหว่างกลาง
+			ThemeTag = {
+				BackgroundColor3 = "Tab",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			-- Background gradient
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+				},
+				Rotation = 90,
+			}),
+			HoverGlow,
+			SelectionIndicator,
+			New("TextLabel", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = not fischbypass and Icon and UDim2.new(0, 34, 0.5, 0) or UDim2.new(0, 16, 0.5, 0),
+				Text = Title,
+				RichText = true,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextTransparency = 0,
+				FontFace = Font.new(
+					"rbxasset://fonts/families/GothamSSm.json",
+					Enum.FontWeight.Medium,
+					Enum.FontStyle.Normal
+				),
+				TextSize = 13,
+				TextXAlignment = "Left",
+				TextYAlignment = "Center",
+				Size = UDim2.new(1, -16, 1, 0),
+				BackgroundTransparency = 1,
+				ZIndex = 4, -- ให้ text อยู่ด้านหน้าสุด
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			}),
+			New("ImageLabel", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.fromOffset(18, 18),
+				Position = UDim2.new(0, 10, 0.5, 0),
+				BackgroundTransparency = 1,
+				Image = Icon and Icon or nil,
+				ImageColor3 = Color3.fromRGB(180, 180, 180),
+				ZIndex = 4, -- ให้ icon อยู่ด้านหน้าสุด
+				ThemeTag = {
+					ImageColor3 = "Text",
+				},
+			}),
+		})
+
+		local ContainerLayout = New("UIListLayout", {
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		})
+
+		Tab.ContainerFrame = New("ScrollingFrame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Parent = Window.ContainerHolder,
+			Visible = false,
+			BottomImage = "rbxassetid://6889812791",
+			MidImage = "rbxassetid://6889812721",
+			TopImage = "rbxassetid://6276641225",
+			ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120),
+			ScrollBarImageTransparency = 0.9,
+			ScrollBarThickness = 4,
+			BorderSizePixel = 0,
+			CanvasSize = UDim2.fromScale(0, 0),
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+		}, {
+			ContainerLayout,
+			New("UIPadding", {
+				PaddingRight = UDim.new(0, 12),
+				PaddingLeft = UDim.new(0, 2),
+				PaddingTop = UDim.new(0, 2),
+				PaddingBottom = UDim.new(0, 2),
+			}),
+		})
+		
+
+		Creator.AddSignal(ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+			Tab.ContainerFrame.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 4)
+		end)
+
+		-- Enhanced animation motors
+		Tab.Motor, Tab.SetTransparency = Creator.SpringMotor(1, Tab.Frame, "BackgroundTransparency")
+		Tab.GlowMotor, Tab.SetGlowTransparency = Creator.SpringMotor(1, HoverGlow, "BackgroundTransparency")
+		Tab.IndicatorMotor, Tab.SetIndicatorTransparency = Creator.SpringMotor(1, SelectionIndicator, "BackgroundTransparency")
+
+		-- Enhanced hover and selection effects - ปรับ transparency ให้ชัดเจนขึ้น
+		Creator.AddSignal(Tab.Frame.MouseEnter, function()
+			if not Tab.Selected then
+				Tab.SetTransparency(0.85)
+				Tab.SetGlowTransparency(0.95) -- ลดความโปร่งแสงของ glow ให้น้อยลง
+			end
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseLeave, function()
+			if not Tab.Selected then
+				Tab.SetTransparency(1)
+				Tab.SetGlowTransparency(1)
+			end
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Down, function()
+			Tab.SetTransparency(0.75)
+			Tab.SetGlowTransparency(0.9)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Up, function()
+			Tab.SetTransparency(Tab.Selected and 0.85 or 0.85)
+			Tab.SetGlowTransparency(Tab.Selected and 1 or 0.95)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Click, function()
+			TabModule:SelectTab(TabIndex)
+		end)
+
+		TabModule.Containers[TabIndex] = Tab.ContainerFrame
+		TabModule.Tabs[TabIndex] = Tab
+
+		Tab.Container = Tab.ContainerFrame
+		Tab.ScrollFrame = Tab.Container
+
+		-- Store references for selection indicator
+		Tab.SelectionIndicator = SelectionIndicator
+		Tab.HoverGlow = HoverGlow
+
+		function Tab:AddSection(SectionTitle, SectionIcon)
+			local Section = { Type = "Section" }
+
+			local Icon = SectionIcon
+			if not fischbypass then 
+				if Library:GetIcon(Icon) then
+					Icon = Library:GetIcon(Icon)
+				end
+
+				if Icon == "" or nil then
+					Icon = nil
+				end
+			end
+
+			local SectionFrame = Components.Section(SectionTitle, Tab.Container, Icon)
+			Section.Container = SectionFrame.Container
+			Section.ScrollFrame = Tab.Container
+
+			setmetatable(Section, Elements)
+			return Section
+		end
+
+		-- Additional utility functions
+		function Tab:SetTitle(newTitle)
+			Tab.Name = newTitle
+			Tab.Frame:FindFirstChild("TextLabel").Text = newTitle
+		end
+
+		function Tab:SetIcon(newIcon)
+			local iconLabel = Tab.Frame:FindFirstChild("ImageLabel")
+			if iconLabel then
+				iconLabel.Image = newIcon
+			end
+		end
+
+		function Tab:SetVisible(visible)
+			Tab.Frame.Visible = visible
+		end
+
+		setmetatable(Tab, Elements)
+		return Tab
+	end
+
+	function TabModule:SelectTab(Tab)
+		local Window = TabModule.Window
+
+		TabModule.SelectedTab = Tab
+
+		-- Enhanced selection animation
+		for Index, TabObject in next, TabModule.Tabs do
+			TabObject.SetTransparency(1)
+			TabObject.SetGlowTransparency(1)
+			TabObject.SetIndicatorTransparency(1)
+			TabObject.Selected = false
+			
+			-- Reset text color for unselected tabs
+			local textLabel = TabObject.Frame:FindFirstChild("TextLabel")
+			if textLabel then
+				textLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+			end
+			
+			-- Reset icon color for unselected tabs
+			local iconLabel = TabObject.Frame:FindFirstChild("ImageLabel")
+			if iconLabel then
+				iconLabel.ImageColor3 = Color3.fromRGB(180, 180, 180)
+			end
+		end
+
+		-- Set selected tab styling
+		TabModule.Tabs[Tab].SetTransparency(0.85)
+		TabModule.Tabs[Tab].SetIndicatorTransparency(0) -- แสดง selection indicator
+		TabModule.Tabs[Tab].SetGlowTransparency(1) -- ซ่อน glow สำหรับ selected tab
+		TabModule.Tabs[Tab].Selected = true
+
+		-- Enhanced selected tab styling
+		local selectedTextLabel = TabModule.Tabs[Tab].Frame:FindFirstChild("TextLabel")
+		if selectedTextLabel then
+			selectedTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
+
+		local selectedIconLabel = TabModule.Tabs[Tab].Frame:FindFirstChild("ImageLabel")
+		if selectedIconLabel then
+			selectedIconLabel.ImageColor3 = Color3.fromRGB(100, 150, 255)
+		end
+
+		Window.TabDisplay.Text = TabModule.Tabs[Tab].Name
+		Window.SelectorPosMotor:setGoal(Spring(TabModule:GetCurrentTabPos(), { frequency = 6 }))
+
+		-- Enhanced container transition
+		task.spawn(function()
+			Window.ContainerHolder.Parent = Window.ContainerAnim
+
+			Window.ContainerPosMotor:setGoal(Spring(20, { frequency = 12 }))
+			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 12 }))
+			task.wait(0.1)
+			
+			for _, Container in next, TabModule.Containers do
+				Container.Visible = false
+			end
+			TabModule.Containers[Tab].Visible = true
+			
+			Window.ContainerPosMotor:setGoal(Spring(0, { frequency = 8 }))
+			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 10 }))
+			task.wait(0.1)
+			
+			Window.ContainerHolder.Parent = Window.ContainerCanvas
+		end)
+	end
+
+	-- Additional utility functions for the module
+	function TabModule:GetSelectedTab()
+		return TabModule.SelectedTab
+	end
+
+	function TabModule:GetTabCount()
+		return TabModule.TabCount
+	end
+
+	function TabModule:GetTabByIndex(index)
+		return TabModule.Tabs[index]
+	end
+
+	function TabModule:GetTabByName(name)
+		for _, tab in pairs(TabModule.Tabs) do
+			if tab.Name == name then
+				return tab
+			end
+		end
+		return nil
+	end
+
+	return TabModule
+end)()
 
 Components.Button = (function()
 	local New = Creator.New
@@ -2965,6 +3329,7 @@ Components.Dialog = (function()
 
 	return Dialog
 end)()
+
 Components.Notification = (function()
 	local Spring = Flipper.Spring.new
 	local Instant = Flipper.Instant.new
@@ -3204,6 +3569,7 @@ Components.Notification = (function()
 
 	return Notification
 end)()
+
 Components.Textbox = (function()
 	local New = Creator.New
 
@@ -3323,7 +3689,6 @@ Components.Textbox = (function()
 	end
 end)()
 
---[[
 Components.TitleBar = (function()
 	local New = Creator.New
 	local AddSignal = Creator.AddSignal
@@ -3473,279 +3838,19 @@ Components.TitleBar = (function()
 				},
 			})
 		end)
-        ----
+        --[[
 		TitleBar.MaxButton = BarButton(Components.Assets.Max, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
 			Config.Window.Maximize(not Config.Window.Maximized)
 		end)
 		TitleBar.MinButton = BarButton(Components.Assets.Min, UDim2.new(1, -80, 0, 4), TitleBar.Frame, function()
 			Library.Window:Minimize()
 		end)
-		-----
+		]]
 
 		return TitleBar
 	end
 end)()
-]]
 
-Components.TitleBar = (function()
-	local New = Creator.New
-	local AddSignal = Creator.AddSignal
-
-	return function(Config)
-		local TitleBar = {}
-
-		local function BarButton(Icon, Pos, Parent, Callback)
-			local Button = {
-				Callback = Callback or function() end,
-			}
-
-			Button.Frame = New("TextButton", {
-				Size = UDim2.new(0, 34, 1, -8),
-				AnchorPoint = Vector2.new(1, 0),
-				BackgroundTransparency = 1,
-				Parent = Parent,
-				Position = Pos,
-				Text = "",
-				ThemeTag = {
-					BackgroundColor3 = "Text",
-				},
-			}, {
-				New("UICorner", {
-					CornerRadius = UDim.new(0, 8),
-				}),
-				New("ImageLabel", {
-					Image = Icon,
-					Size = UDim2.fromOffset(16, 16),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					BackgroundTransparency = 1,
-					Name = "Icon",
-					ThemeTag = {
-						ImageColor3 = "Text",
-					},
-				}),
-				-- Add subtle glow effect
-				New("ImageLabel", {
-					Image = Icon,
-					Size = UDim2.fromOffset(18, 18),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					BackgroundTransparency = 1,
-					ImageTransparency = 0.8,
-					Name = "Glow",
-					ZIndex = -1,
-					ThemeTag = {
-						ImageColor3 = "Text",
-					},
-				}),
-			})
-
-			local Motor, SetTransparency = Creator.SpringMotor(1, Button.Frame, "BackgroundTransparency")
-			local GlowMotor, SetGlowTransparency = Creator.SpringMotor(1, Button.Frame.Glow, "ImageTransparency")
-
-			AddSignal(Button.Frame.MouseEnter, function()
-				SetTransparency(0.92)
-				SetGlowTransparency(0.6)
-				-- Scale animation
-				Library:Tween(Button.Frame.Icon, 0.2, {
-					Size = UDim2.fromOffset(18, 18)
-				})
-			end)
-			
-			AddSignal(Button.Frame.MouseLeave, function()
-				SetTransparency(1, true)
-				SetGlowTransparency(1, true)
-				-- Scale back
-				Library:Tween(Button.Frame.Icon, 0.2, {
-					Size = UDim2.fromOffset(16, 16)
-				})
-			end)
-			
-			AddSignal(Button.Frame.MouseButton1Down, function()
-				SetTransparency(0.96)
-				-- Press animation
-				Library:Tween(Button.Frame.Icon, 0.1, {
-					Size = UDim2.fromOffset(15, 15)
-				})
-			end)
-			
-			AddSignal(Button.Frame.MouseButton1Up, function()
-				SetTransparency(0.92)
-				-- Release animation
-				Library:Tween(Button.Frame.Icon, 0.1, {
-					Size = UDim2.fromOffset(18, 18)
-				})
-			end)
-			
-			AddSignal(Button.Frame.MouseButton1Click, Button.Callback)
-
-			Button.SetCallback = function(Func)
-				Button.Callback = Func
-			end
-
-			return Button
-		end
-
-		TitleBar.Frame = New("Frame", {
-			Size = UDim2.new(1, 0, 0, 42),
-			BackgroundTransparency = 1,
-			Parent = Config.Parent,
-		}, {
-			-- Add gradient background
-			New("Frame", {
-				Size = UDim2.new(1, 0, 1, 0),
-				BackgroundTransparency = 0.98,
-				ZIndex = -1,
-				ThemeTag = {
-					BackgroundColor3 = "Text",
-				},
-			}, {
-				New("UIGradient", {
-					Transparency = NumberSequence.new({
-						NumberSequenceKeypoint.new(0, 0.98),
-						NumberSequenceKeypoint.new(1, 1)
-					}),
-					Rotation = 90,
-				}),
-			}),
-			
-			New("Frame", {
-				Size = UDim2.new(1, -16, 1, 0),
-				Position = UDim2.new(0, 16, 0, 0),
-				BackgroundTransparency = 1,
-			}, {
-				New("UIListLayout", {
-					Padding = UDim.new(0, 8),
-					FillDirection = Enum.FillDirection.Horizontal,
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					VerticalAlignment = Enum.VerticalAlignment.Center,
-				}),
-
-				-- Main Title with better styling
-				New("TextLabel", {
-					RichText = true,
-					Text = Config.Title,
-					FontFace = Font.new(
-						"rbxasset://fonts/families/GothamSSm.json",
-						Enum.FontWeight.Medium,
-						Enum.FontStyle.Normal
-					),
-					TextSize = 13,
-					TextXAlignment = "Left",
-					TextYAlignment = "Center",
-					Size = UDim2.fromScale(0, 1),
-					AutomaticSize = Enum.AutomaticSize.X,
-					BackgroundTransparency = 1,
-					LayoutOrder = 1,
-					ThemeTag = {
-						TextColor3 = "Text",
-					},
-				}),
-				
-				-- Subtitle with fade effect
-				Config.SubTitle and New("Frame", {
-					Size = UDim2.fromScale(0, 1),
-					AutomaticSize = Enum.AutomaticSize.X,
-					BackgroundTransparency = 1,
-					LayoutOrder = 2,
-				}, {
-					New("TextLabel", {
-						RichText = true,
-						Text = "• " .. Config.SubTitle,
-						FontFace = Font.new(
-							"rbxasset://fonts/families/GothamSSm.json",
-							Enum.FontWeight.Regular,
-							Enum.FontStyle.Normal
-						),
-						TextSize = 11,
-						TextXAlignment = "Left",
-						TextYAlignment = "Center",
-						Size = UDim2.fromScale(1, 1),
-						BackgroundTransparency = 1,
-						ThemeTag = {
-							TextColor3 = "Text",
-						},
-					}),
-					New("UIGradient", {
-						Transparency = NumberSequence.new({
-							NumberSequenceKeypoint.new(0, 0.3),
-							NumberSequenceKeypoint.new(1, 0.7)
-						}),
-						Rotation = 0,
-					}),
-				}) or nil,
-			}),
-			
-			-- Enhanced bottom line with gradient
-			New("Frame", {
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 1),
-				Position = UDim2.new(0, 0, 1, 0),
-			}, {
-				New("Frame", {
-					Size = UDim2.new(1, 0, 1, 0),
-					BackgroundTransparency = 0.3,
-					ThemeTag = {
-						BackgroundColor3 = "TitleBarLine",
-					},
-				}, {
-					New("UIGradient", {
-						Transparency = NumberSequence.new({
-							NumberSequenceKeypoint.new(0, 0.8),
-							NumberSequenceKeypoint.new(0.5, 0.3),
-							NumberSequenceKeypoint.new(1, 0.8)
-						}),
-					}),
-				}),
-			}),
-		})
-
-		-- Enhanced Close Button with better visual feedback
-		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
-			-- Add close button press effect
-			local closeFrame = TitleBar.CloseButton.Frame
-			Library:Tween(closeFrame, 0.1, {BackgroundTransparency = 0.8})
-			spawn(function()
-				wait(0.1)
-				Library:Tween(closeFrame, 0.1, {BackgroundTransparency = 1})
-			end)
-			
-			Library.Window:Dialog({
-				Title = "Close",
-				Content = "Are you sure you want to unload the interface?",
-				Buttons = {
-					{
-						Title = "Yes",
-						Callback = function()
-							Library:Destroy()
-							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
-								game:GetService("CoreGui").BONKHUBMODILE:Destroy()
-							end
-						end,
-					},
-					{
-						Title = "No",
-					},
-				},
-			})
-		end)
-
-		-- Add breathing animation to title
-		spawn(function()
-			local titleLabel = TitleBar.Frame:FindFirstChild("Frame"):FindFirstChild("TextLabel")
-			if titleLabel then
-				while titleLabel.Parent do
-					Library:Tween(titleLabel, 2, {TextTransparency = 0.1})
-					wait(2)
-					Library:Tween(titleLabel, 2, {TextTransparency = 0})
-					wait(2)
-				end
-			end
-		end)
-
-		return TitleBar
-	end
-end)()
 
 --[[
 Components.Window = (function()
@@ -5121,46 +5226,107 @@ ElementsTable.Dropdown = (function()
 			DropdownDisplay,
 		})
 
-		-- Search Box (จะแสดงแค่ตอนที่ Searchable เป็น true)
+		-- Search Box ที่ปรับปรุงแล้ว
+		local SearchIcon = New("ImageLabel", {
+			Image = "rbxassetid://10709761530", -- Search icon
+			Size = UDim2.fromOffset(16, 16),
+			Position = UDim2.new(0, 8, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 1,
+			ImageColor3 = Color3.fromRGB(150, 150, 150),
+			ThemeTag = {
+				ImageColor3 = "SubText",
+			},
+		})
+
 		local SearchBox = New("TextBox", {
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
 			Text = "",
-			PlaceholderText = "Search...",
-			PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+			PlaceholderText = "Search items...",
+			PlaceholderColor3 = Color3.fromRGB(130, 130, 130),
 			TextColor3 = Color3.fromRGB(240, 240, 240),
 			TextSize = 13,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, -10, 0, 25),
-			Position = UDim2.fromOffset(5, 5),
-			BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-			BackgroundTransparency = 0.3,
-			Visible = Dropdown.Searchable,
+			Size = UDim2.new(1, -32, 1, 0),
+			Position = UDim2.new(0, 28, 0, 0),
+			BackgroundTransparency = 1,
+			ClearTextOnFocus = false,
 			ThemeTag = {
 				TextColor3 = "Text",
 				PlaceholderColor3 = "SubText",
+			},
+		})
+
+		local SearchContainer = New("Frame", {
+			Size = UDim2.new(1, -10, 0, 32),
+			Position = UDim2.fromOffset(5, 5),
+			BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+			BackgroundTransparency = 0.1,
+			Visible = Dropdown.Searchable,
+			ThemeTag = {
 				BackgroundColor3 = "SearchBox",
 			},
 		}, {
 			New("UICorner", {
-				CornerRadius = UDim.new(0, 4),
+				CornerRadius = UDim.new(0, 6),
 			}),
 			New("UIStroke", {
-				Transparency = 0.7,
+				Transparency = 0.6,
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Color3.fromRGB(70, 70, 70),
 				ThemeTag = {
 					Color = "InElementBorder",
 				},
 			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
+				},
+				Rotation = 90,
+			}),
+			SearchIcon,
+			SearchBox,
 		})
+
+		-- Animation motors สำหรับ Search Container
+		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
+		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
+
+		-- Hover effects สำหรับ Search Container
+		Creator.AddSignal(SearchContainer.MouseEnter, function()
+			SetSearchTransparency(0.05)
+			SetSearchStrokeTransparency(0.4)
+		end)
+
+		Creator.AddSignal(SearchContainer.MouseLeave, function()
+			if not SearchBox:IsFocused() then
+				SetSearchTransparency(0.1)
+				SetSearchStrokeTransparency(0.6)
+			end
+		end)
+
+		-- Focus effects สำหรับ SearchBox
+		Creator.AddSignal(SearchBox.Focused, function()
+			SetSearchTransparency(0.02)
+			SetSearchStrokeTransparency(0.3)
+			SearchIcon.ImageColor3 = Color3.fromRGB(100, 150, 255)
+		end)
+
+		Creator.AddSignal(SearchBox.FocusLost, function()
+			SetSearchTransparency(0.1)
+			SetSearchStrokeTransparency(0.6)
+			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
+		end)
 
 		local DropdownListLayout = New("UIListLayout", {
 			Padding = UDim.new(0, 3),
 		})
 
 		local DropdownScrollFrame = New("ScrollingFrame", {
-			Size = Dropdown.Searchable and UDim2.new(1, -5, 1, -40) or UDim2.new(1, -5, 1, -10),
-			Position = Dropdown.Searchable and UDim2.fromOffset(5, 35) or UDim2.fromOffset(5, 5),
+			Size = Dropdown.Searchable and UDim2.new(1, -5, 1, -47) or UDim2.new(1, -5, 1, -10),
+			Position = Dropdown.Searchable and UDim2.fromOffset(5, 42) or UDim2.fromOffset(5, 5),
 			BackgroundTransparency = 1,
 			BottomImage = "rbxassetid://6889812791",
 			MidImage = "rbxassetid://6889812721",
@@ -5181,16 +5347,24 @@ ElementsTable.Dropdown = (function()
 				BackgroundColor3 = "DropdownHolder",
 			},
 		}, {
-			SearchBox,
+			SearchContainer,
 			DropdownScrollFrame,
 			New("UICorner", {
-				CornerRadius = UDim.new(0, 7),
+				CornerRadius = UDim.new(0, 8),
 			}),
 			New("UIStroke", {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Transparency = 0.7,
 				ThemeTag = {
 					Color = "DropdownBorder",
 				},
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 48, 48)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+				},
+				Rotation = 90,
 			}),
 			New("ImageLabel", {
 				BackgroundTransparency = 1,
@@ -5200,7 +5374,7 @@ ElementsTable.Dropdown = (function()
 				Size = UDim2.fromScale(1, 1) + UDim2.fromOffset(30, 30),
 				Position = UDim2.fromOffset(-15, -15),
 				ImageColor3 = Color3.fromRGB(0, 0, 0),
-				ImageTransparency = 0.1,
+				ImageTransparency = 0.05,
 			}),
 		})
 
@@ -5221,7 +5395,7 @@ ElementsTable.Dropdown = (function()
         	local dropAbsPos = DropdownInner.AbsolutePosition
         	local dropAbsSize = DropdownInner.AbsoluteSize
         
-        	local newX = dropAbsPos.X + dropAbsSize.X + 6 -- วางขวาของ dropdownInner (เพิ่ม 6 px ระยะห่าง)
+        	local newX = dropAbsPos.X + dropAbsSize.X + 6
         	local newY = dropAbsPos.Y
         
         	if newX + DropdownHolderCanvas.AbsoluteSize.X > Camera.ViewportSize.X then
@@ -5238,8 +5412,8 @@ ElementsTable.Dropdown = (function()
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
-			local baseHeight = Dropdown.Searchable and 40 or 10 -- เพิ่มพื้นที่สำหรับ search box
-			local maxHeight = Dropdown.Searchable and 432 or 392 -- ปรับ max height ตาม search box
+			local baseHeight = Dropdown.Searchable and 47 or 10
+			local maxHeight = Dropdown.Searchable and 439 or 392
 			
 			if #Dropdown.Values > 10 then
 				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, maxHeight)
@@ -5252,7 +5426,6 @@ ElementsTable.Dropdown = (function()
 			DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0, DropdownListLayout.AbsoluteContentSize.Y)
 		end
 
-		-- ฟังก์ชันสำหรับกรองรายการตามการค้นหา
 		local function FilterItems(searchText)
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
 				if not Element:IsA("UIListLayout") then
@@ -5294,14 +5467,6 @@ ElementsTable.Dropdown = (function()
 			Creator.AddSignal(SearchBox:GetPropertyChangedSignal("Text"), function()
 				FilterItems(SearchBox.Text)
 			end)
-
-			Creator.AddSignal(SearchBox.Focused, function()
-				-- ไม่ต้องล้างข้อความเมื่อ focus แล้ว
-			end)
-
-			Creator.AddSignal(SearchBox.FocusLost, function()
-				-- ไม่ต้องทำอะไรเมื่อ focus หาย
-			end)
 		end
 
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
@@ -5333,21 +5498,26 @@ ElementsTable.Dropdown = (function()
 				FilterItems("")
 			end
 			
-			TweenService:Create(
+			local openTween = TweenService:Create(
 				DropdownHolderFrame,
-				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Size = UDim2.fromScale(1, 1) }
-			):Play()
-			TweenService:Create(
+			)
+			
+			local iconTween = TweenService:Create(
 				DropdownIco,
 				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 0 }
-			):Play()
+			)
 			
-			-- Focus ที่ search box ทันทีเมื่อเปิด dropdown (ถ้าเปิดใช้งาน)
+			openTween:Play()
+			iconTween:Play()
+			
+			-- Auto-focus ที่ search box ทันทีเมื่อเปิด dropdown
 			if Dropdown.Searchable then
-				wait(0.1) -- รอให้ animation เสร็จเสียก่อน
-				SearchBox:CaptureFocus()
+				openTween.Completed:Connect(function()
+					SearchBox:CaptureFocus()
+				end)
 			end
 		end
 
@@ -5356,11 +5526,13 @@ ElementsTable.Dropdown = (function()
 			ScrollFrame.ScrollingEnabled = true
 			DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
 			DropdownHolderCanvas.Visible = false
-			TweenService:Create(
+			
+			local iconTween = TweenService:Create(
 				DropdownIco,
 				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 180 }
-			):Play()
+			)
+			iconTween:Play()
 			
 			-- ปล่อย focus จาก search box
 			if Dropdown.Searchable then
@@ -5428,7 +5600,7 @@ ElementsTable.Dropdown = (function()
 
 				local ButtonSelector = New("Frame", {
 					Size = UDim2.fromOffset(4, 14),
-					BackgroundColor3 = Color3.fromRGB(76, 194, 255),
+					BackgroundColor3 = Color3.fromRGB(100, 150, 255),
 					Position = UDim2.fromOffset(-1, 16),
 					AnchorPoint = Vector2.new(0, 0.5),
 					ThemeTag = {
@@ -5437,6 +5609,13 @@ ElementsTable.Dropdown = (function()
 				}, {
 					New("UICorner", {
 						CornerRadius = UDim.new(0, 2),
+					}),
+					New("UIGradient", {
+						Color = ColorSequence.new{
+							ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 170, 255)),
+							ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 130, 255))
+						},
+						Rotation = 90,
 					}),
 				})
 
@@ -5472,6 +5651,13 @@ ElementsTable.Dropdown = (function()
 					New("UICorner", {
 						CornerRadius = UDim.new(0, 6),
 					}),
+					New("UIGradient", {
+						Color = ColorSequence.new{
+							ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+							ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
+						},
+						Rotation = 90,
+					}),
 				})
 
 				local Selected
@@ -5491,27 +5677,27 @@ ElementsTable.Dropdown = (function()
 				end)
 
 				Creator.AddSignal(Button.MouseEnter, function()
-					SetBackTransparency(Selected and 0.85 or 0.89)
+					SetBackTransparency(Selected and 0.82 or 0.86)
 				end)
 				Creator.AddSignal(Button.MouseLeave, function()
-					SetBackTransparency(Selected and 0.89 or 1)
+					SetBackTransparency(Selected and 0.86 or 1)
 				end)
 				Creator.AddSignal(Button.MouseButton1Down, function()
-					SetBackTransparency(0.92)
+					SetBackTransparency(0.90)
 				end)
 				Creator.AddSignal(Button.MouseButton1Up, function()
-					SetBackTransparency(Selected and 0.85 or 0.89)
+					SetBackTransparency(Selected and 0.82 or 0.86)
 				end)
 
 				function Table:UpdateButton()
 					if Config.Multi then
 						Selected = Dropdown.Value[Value]
 						if Selected then
-							SetBackTransparency(0.89)
+							SetBackTransparency(0.86)
 						end
 					else
 						Selected = Dropdown.Value == Value
-						SetBackTransparency(Selected and 0.89 or 1)
+						SetBackTransparency(Selected and 0.86 or 1)
 					end
 
 					SelectorSizeMotor:setGoal(Flipper.Spring.new(Selected and 14 or 6, { frequency = 6 }))
@@ -5651,6 +5837,8 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
+
+
 
 
 ElementsTable.Paragraph = (function()
