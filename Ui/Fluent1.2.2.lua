@@ -2210,7 +2210,7 @@ Components.Tab = (function()
 				Icon = nil
 			end
 		end
-
+        --[[
 		Tab.Frame = New("TextButton", {
 			Size = UDim2.new(1, 0, 0, 34),
 			BackgroundTransparency = 1,
@@ -2254,6 +2254,58 @@ Components.Tab = (function()
 				},
 			}),
 		})
+		]]
+		Tab.Frame = New("TextButton", {
+        	--Name = "Tab_" .. Title,
+        	Size = UDim2.new(1, 0, 0, 38),
+        	BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+        	AutoButtonColor = false,
+        	BorderSizePixel = 0,
+        	Parent = Parent,
+        	ThemeTag = {
+        		BackgroundColor3 = "Tab",
+        	},
+        }, {
+        	New("UICorner", {
+        		CornerRadius = UDim.new(0, 10),
+        	}),
+        	New("UIStroke", {
+        		Color = Color3.fromRGB(70, 70, 70),
+        		Thickness = 1,
+        		Transparency = 0.4,
+        	}),
+        	New("TextLabel", {
+        		Name = "TabTitle",
+        		AnchorPoint = Vector2.new(0, 0.5),
+        		Position = UDim2.new(0, Icon and 36 or 14, 0.5, 0),
+        		Text = Title,
+        		RichText = true,
+        		Font = Enum.Font.GothamMedium,
+        		TextColor3 = Color3.fromRGB(240, 240, 240),
+        		TextSize = 13,
+        		TextXAlignment = Enum.TextXAlignment.Left,
+        		Size = UDim2.new(1, -50, 1, 0),
+        		BackgroundTransparency = 1,
+        		ThemeTag = {
+        			TextColor3 = "Text",
+        		},
+        	}),
+        	New("ImageLabel", {
+        		Name = "TabIcon",
+        		AnchorPoint = Vector2.new(0, 0.5),
+        		Size = UDim2.fromOffset(20, 20),
+        		Position = UDim2.new(0, 10, 0.5, 0),
+        		BackgroundTransparency = 1,
+        		Image = Icon or "",
+        		ThemeTag = {
+        			ImageColor3 = "Text",
+        		},
+        	}),
+        	New("UIPadding", {
+        		PaddingLeft = UDim.new(0, 6),
+        		PaddingRight = UDim.new(0, 6),
+        	}),
+        })
 
 		local ContainerLayout = New("UIListLayout", {
 			Padding = UDim.new(0, 5),
@@ -2283,6 +2335,7 @@ Components.Tab = (function()
 				PaddingBottom = UDim.new(0, 1),
 			}),
 		})
+		
 
 		Creator.AddSignal(ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
 			Tab.ContainerFrame.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 2)
@@ -6795,10 +6848,12 @@ else
 	Fluent = Library
 end
 
+
 local MinimizeButton = New("TextButton", {
 	BackgroundTransparency = 1,
 	Size = UDim2.new(1, 0, 1, 0),
-	BorderSizePixel = 0
+	BorderSizePixel = 0,
+	Visible = false
 }, {
 	New("UIPadding", {
 		PaddingBottom = UDim.new(0, 2),
@@ -6820,7 +6875,6 @@ local MinimizeButton = New("TextButton", {
 
 local Minimizer
 
---[[
 if Mobile then
 	Minimizer = New("Frame", {
 		Parent = GUI,
@@ -6828,6 +6882,7 @@ if Mobile then
 		Position = UDim2.new(0.45, 0, 0.025, 0),
 		BackgroundTransparency = 1,
 		ZIndex = 999999999,
+		Visible = false
 	},
 	{
 		New("Frame", {
@@ -6865,7 +6920,7 @@ else
 		})
 	})
 end
-]]
+
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
