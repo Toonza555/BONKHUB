@@ -3322,6 +3322,8 @@ Components.Textbox = (function()
 		return Textbox
 	end
 end)()
+
+--[[
 Components.TitleBar = (function()
 	local New = Creator.New
 	local AddSignal = Creator.AddSignal
@@ -3471,7 +3473,242 @@ Components.TitleBar = (function()
 				},
 			})
 		end)
+        ---------
+		TitleBar.MaxButton = BarButton(Components.Assets.Max, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
+			Config.Window.Maximize(not Config.Window.Maximized)
+		end)
+		TitleBar.MinButton = BarButton(Components.Assets.Min, UDim2.new(1, -80, 0, 4), TitleBar.Frame, function()
+			Library.Window:Minimize()
+		end)
+		---------
+
+		return TitleBar
+	end
+end)()
+]]
+Components.TitleBar = (function()
+	local New = Creator.New
+	local AddSignal = Creator.AddSignal
+
+	return function(Config)
+		local TitleBar = {}
+
+		local function BarButton(Icon, Pos, Parent, Callback)
+			local Button = {
+				Callback = Callback or function() end,
+			}
+
+			Button.Frame = New("TextButton", {
+				Size = UDim2.new(0, 34, 1, -8),
+				AnchorPoint = Vector2.new(1, 0),
+				BackgroundTransparency = 1,
+				Parent = Parent,
+				Position = Pos,
+				Text = "",
+				ThemeTag = {
+					BackgroundColor3 = "Text",
+				},
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 7),
+				}),
+				New("ImageLabel", {
+					Image = Icon,
+					Size = UDim2.fromOffset(16, 16),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					Name = "Icon",
+					ThemeTag = {
+						ImageColor3 = "Text",
+					},
+				}),
+			})
+
+			local Motor, SetTransparency = Creator.SpringMotor(1, Button.Frame, "BackgroundTransparency")
+
+			AddSignal(Button.Frame.MouseEnter, function()
+				SetTransparency(0.94)
+			end)
+			AddSignal(Button.Frame.MouseLeave, function()
+				SetTransparency(1, true)
+			end)
+			AddSignal(Button.Frame.MouseButton1Down, function()
+				SetTransparency(0.96)
+			end)
+			AddSignal(Button.Frame.MouseButton1Up, function()
+				SetTransparency(0.94)
+			end)
+			AddSignal(Button.Frame.MouseButton1Click, Button.Callback)
+
+			Button.SetCallback = function(Func)
+				Button.Callback = Func
+			end
+
+			return Button
+		end
+
+		TitleBar.Frame = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 42),
+			BackgroundTransparency = 1,
+			Parent = Config.Parent,
+		}, {
+			-- Logo Container (Left side)
+			New("Frame", {
+				Size = UDim2.new(0, 50, 1, 0),
+				Position = UDim2.new(0, 8, 0, 0),
+				BackgroundTransparency = 1,
+				Name = "LogoContainer",
+			}, {
+				New("ImageLabel", {
+					Image = Config.Logo or "rbxassetid://0", -- Default empty logo
+					Size = UDim2.fromOffset(28, 28),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					Name = "Logo",
+					ScaleType = Enum.ScaleType.Fit,
+					ThemeTag = {
+						ImageColor3 = "Text",
+					},
+				}, {
+					New("UICorner", {
+						CornerRadius = UDim.new(0, 6),
+					}),
+					New("UIStroke", {
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Transparency = 0.8,
+						Thickness = 1,
+						ThemeTag = {
+							Color = "ElementBorder",
+						},
+					}),
+				}),
+			}),
+			
+			-- Title and Subtitle Container (Center)
+			New("Frame", {
+				Size = UDim2.new(1, -120, 1, 0), -- Adjusted to account for logo and buttons
+				Position = UDim2.new(0, 58, 0, 0),
+				BackgroundTransparency = 1,
+				Name = "TitleContainer",
+			}, {
+				New("UIListLayout", {
+					Padding = UDim.new(0, 6),
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+				}),
+
+				New("TextLabel", {
+					RichText = true,
+					Text = Config.Title,
+					FontFace = Font.new(
+						"rbxasset://fonts/families/GothamSSm.json",
+						Enum.FontWeight.SemiBold,
+						Enum.FontStyle.Normal
+					),
+					TextSize = 13,
+					TextXAlignment = "Left",
+					TextYAlignment = "Center",
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					LayoutOrder = 1,
+					ThemeTag = {
+						TextColor3 = "Text",
+					},
+				}),
+				
+				Config.SubTitle and New("TextLabel", {
+					RichText = true,
+					Text = "• " .. Config.SubTitle,
+					TextTransparency = 0.5,
+					FontFace = Font.new(
+						"rbxasset://fonts/families/GothamSSm.json",
+						Enum.FontWeight.Regular,
+						Enum.FontStyle.Normal
+					),
+					TextSize = 12,
+					TextXAlignment = "Left",
+					TextYAlignment = "Center",
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					LayoutOrder = 2,
+					ThemeTag = {
+						TextColor3 = "Text",
+					},
+				}) or nil,
+			}),
+			
+			-- Bottom border line
+			New("Frame", {
+				BackgroundTransparency = 0.5,
+				Size = UDim2.new(1, 0, 0, 1),
+				Position = UDim2.new(0, 0, 1, 0),
+				ThemeTag = {
+					BackgroundColor3 = "TitleBarLine",
+				},
+			}),
+		})
+
+		-- Store logo reference for easy access
+		TitleBar.Logo = TitleBar.Frame.LogoContainer.Logo
+
+		-- Function to update logo
+		function TitleBar:SetLogo(imageId)
+			TitleBar.Logo.Image = imageId or "rbxassetid://0"
+		end
+
+		-- Add hover effect to logo
+		local LogoMotor, SetLogoTransparency = Creator.SpringMotor(0, TitleBar.Logo, "ImageTransparency")
+		
+		AddSignal(TitleBar.Logo.MouseEnter, function()
+			SetLogoTransparency(0.2)
+		end)
+		
+		AddSignal(TitleBar.Logo.MouseLeave, function()
+			SetLogoTransparency(0)
+		end)
+
+		-- Make logo clickable if callback is provided
+		if Config.LogoCallback then
+			local LogoButton = New("TextButton", {
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				Text = "",
+				Parent = TitleBar.Frame.LogoContainer,
+				ZIndex = 2,
+			})
+			
+			AddSignal(LogoButton.MouseButton1Click, Config.LogoCallback)
+		end
+
+		-- Close button
+		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
+			Library.Window:Dialog({
+				Title = "Close",
+				Content = "Are you sure you want to unload the interface?",
+				Buttons = {
+					{
+						Title = "Yes",
+						Callback = function()
+							Library:Destroy()
+							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
+                                game:GetService("CoreGui").BONKHUBMODILE:Destroy()
+                            end
+						end,
+					},
+					{
+						Title = "No",
+					},
+				},
+			})
+		end)
+
 		--[[
+		-- Optional: Maximize and Minimize buttons (currently commented out)
 		TitleBar.MaxButton = BarButton(Components.Assets.Max, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
 			Config.Window.Maximize(not Config.Window.Maximized)
 		end)
@@ -3483,7 +3720,6 @@ Components.TitleBar = (function()
 		return TitleBar
 	end
 end)()
-
 --[[
 Components.Window = (function()
 	local Spring = Flipper.Spring.new
@@ -4772,9 +5008,6 @@ ElementsTable.Toggle = (function()
 
 	return Element
 end)()
-
-
-
 
 ElementsTable.Dropdown = (function()
 	local Element = {}
