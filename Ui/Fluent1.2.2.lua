@@ -3483,6 +3483,8 @@ Components.TitleBar = (function()
 		return TitleBar
 	end
 end)()
+
+--[[
 Components.Window = (function()
 	local Spring = Flipper.Spring.new
 	local Instant = Flipper.Instant.new
@@ -3924,7 +3926,6 @@ Components.Window = (function()
 					})
 				end
 			end
-			--[[minimizeButtonMobile
 			if not RunService:IsStudio() and Mobile and Minimizer then
 				pcall(function()
 					local minimizeButton = Minimizer:FindFirstChild("Frame"):FindFirstChild("TextButton")
@@ -3936,7 +3937,6 @@ Components.Window = (function()
 					end
 				end)
 			end
-			]]
 		end
 
 		function Window:Destroy()
@@ -4006,6 +4006,634 @@ Components.Window = (function()
 		return Window
 	end
 end)()
+]]
+Components.Window = (function()
+	local Spring = Flipper.Spring.new
+	local Instant = Flipper.Instant.new
+	local New = Creator.New
+
+	return function(Config)
+		local Window = {
+			Minimized = false,
+			Maximized = false,
+			Size = Config.Size,
+			CurrentPos = 0,
+			TabWidth = 0,
+			Position = UDim2.fromOffset(
+				Camera.ViewportSize.X / 2 - Config.Size.X.Offset / 2,
+				Camera.ViewportSize.Y / 2 - Config.Size.Y.Offset / 2
+			),
+		}
+
+		local Dragging, DragInput, MousePos, StartPos = false
+		local Resizing, ResizePos = false
+		local MinimizeNotif = false
+
+		Window.AcrylicPaint = Acrylic.AcrylicPaint()
+		Window.TabWidth = Config.TabWidth
+
+		-- Enhanced selector with gradient and glow effect
+		local SelectorGlow = New("Frame", {
+			Size = UDim2.fromOffset(8, 0),
+			BackgroundColor3 = Color3.fromRGB(76, 194, 255),
+			Position = UDim2.fromOffset(-2, 17 + 45),
+			AnchorPoint = Vector2.new(0, 0.5),
+			BackgroundTransparency = 0.7,
+			ZIndex = 1,
+			ThemeTag = {
+				BackgroundColor3 = "Accent",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 4),
+			}),
+			New("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0.3),
+					NumberSequenceKeypoint.new(0.5, 0),
+					NumberSequenceKeypoint.new(1, 0.3),
+				}),
+				Rotation = 90,
+			}),
+		})
+
+		local Selector = New("Frame", {
+			Size = UDim2.fromOffset(4, 0),
+			BackgroundColor3 = Color3.fromRGB(76, 194, 255),
+			Position = UDim2.fromOffset(0, 17 + 45),
+			AnchorPoint = Vector2.new(0, 0.5),
+			ZIndex = 2,
+			ThemeTag = {
+				BackgroundColor3 = "Accent",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 2),
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 210, 255)),
+					ColorSequenceKeypoint.new(0.5, Color3.fromRGB(76, 194, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 180, 240)),
+				}),
+				Rotation = 90,
+			}),
+		})
+
+		-- Enhanced resize handle with better visibility
+		local ResizeStartFrame = New("Frame", {
+			Size = UDim2.fromOffset(20, 20),
+			BackgroundTransparency = 1,
+			Position = UDim2.new(1, -20, 1, -20),
+		}, {
+			New("ImageLabel", {
+				Size = UDim2.fromOffset(12, 12),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://10747384394", -- Resize icon
+				ImageTransparency = 0.4,
+				ThemeTag = {
+					ImageColor3 = "SubText",
+				},
+			}),
+		})
+
+		-- Enhanced tab holder with subtle shadow
+		Window.TabHolder = New("ScrollingFrame", {
+			Size = UDim2.new(1, 0, 1, -45),
+			Position = UDim2.new(0, 0, 0, 45),
+			BackgroundTransparency = 1,
+			ScrollBarImageTransparency = 0.8,
+			ScrollBarThickness = 4,
+			BorderSizePixel = 0,
+			CanvasSize = UDim2.fromScale(0, 0),
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+			ThemeTag = {
+				ScrollBarImageColor3 = "Accent",
+			},
+		}, {
+			New("UIListLayout", {
+				Padding = UDim.new(0, 6),
+			}),
+		})
+
+		local SearchElements = {}
+		local AllElements = {}
+
+		local function UpdateElementVisibility(searchTerm)
+			searchTerm = string.lower(searchTerm or "")
+
+			for element, data in pairs(AllElements) do
+				if element and element.Parent then
+					local shouldShow = searchTerm == "" or 
+						string.find(string.lower(data.title), searchTerm, 1, true) or
+						(data.description and string.find(string.lower(data.description), searchTerm, 1, true))
+					element.Visible = shouldShow
+				end
+			end
+
+			task.spawn(function()
+				task.wait(0.01)
+				if Window and Window.TabHolder then
+					for _, child in pairs(Window.TabHolder:GetChildren()) do
+						if child:IsA("ScrollingFrame") then
+							local layout = child:FindFirstChild("UIListLayout")
+							if layout then
+								child.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 2)
+							end
+						end
+					end
+				end
+			end)
+		end
+
+		local function RegisterElement(elementFrame, title, elementType, description)
+			if elementFrame and title then
+				AllElements[elementFrame] = {
+					title = title,
+					type = elementType or "Element",
+					description = description or ""
+				}
+			end
+		end
+
+		-- Enhanced search frame with modern styling
+		local SearchFrame = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 35),
+			Position = UDim2.new(0, 0, 0, 0),
+			BackgroundTransparency = 0.85,
+			ZIndex = 10,
+			ThemeTag = {
+				BackgroundColor3 = "Element",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 8),
+			}),
+			New("UIStroke", {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Transparency = 0.7,
+				Thickness = 1,
+				ThemeTag = {
+					Color = "ElementBorder",
+				},
+			}),
+			New("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0.1),
+					NumberSequenceKeypoint.new(1, 0.2),
+				}),
+				Rotation = 90,
+			}),
+		})
+
+		local SearchTextbox = Components.Textbox(SearchFrame, true)
+		SearchTextbox.Frame.Size = UDim2.new(1, -50, 1, -8)
+		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
+		SearchTextbox.Input.PlaceholderText = "Search components..."
+		SearchTextbox.Input.Text = ""
+
+		-- Enhanced search icon with hover effect
+		local SearchIcon = New("ImageLabel", {
+			Size = UDim2.fromOffset(18, 18),
+			Position = UDim2.new(1, -25, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Image = "rbxassetid://10734943674",
+			ImageTransparency = 0.3,
+			Parent = SearchFrame,
+			ThemeTag = {
+				ImageColor3 = "SubText",
+			},
+		})
+
+		-- Add hover effect to search icon
+		local SearchIconHover = New("ImageLabel", {
+			Size = UDim2.fromOffset(24, 24),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 0.9,
+			BackgroundColor3 = Color3.fromRGB(76, 194, 255),
+			Image = "",
+			ImageTransparency = 1,
+			Parent = SearchIcon,
+			ThemeTag = {
+				BackgroundColor3 = "Accent",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 12),
+			}),
+		})
+
+		Creator.AddSignal(SearchFrame.InputBegan, function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				SearchIconHover.BackgroundTransparency = 0.85
+			end
+		end)
+
+		Creator.AddSignal(SearchFrame.InputEnded, function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				SearchIconHover.BackgroundTransparency = 0.9
+			end
+		end)
+
+		Creator.AddSignal(SearchTextbox.Input:GetPropertyChangedSignal("Text"), function()
+			local searchText = SearchTextbox.Input.Text
+			UpdateElementVisibility(searchText)
+		end)
+
+		Creator.AddSignal(SearchTextbox.Input.FocusLost, function(enterPressed)
+		end)
+
+		Creator.AddSignal(UserInputService.InputBegan, function(input, gameProcessed)
+			if gameProcessed then return end
+
+			if input.KeyCode == Enum.KeyCode.Escape and SearchTextbox.Input:IsFocused() then
+				SearchTextbox.Input.Text = ""
+				SearchTextbox.Input:ReleaseFocus()
+			end
+		end)
+
+		Window.SearchElements = SearchElements
+		Window.AllElements = AllElements
+		Window.RegisterElement = RegisterElement
+		Window.UpdateElementVisibility = UpdateElementVisibility
+
+		-- Enhanced tab frame with better spacing
+		local TabFrame = New("Frame", {
+			Size = UDim2.new(0, Window.TabWidth, 1, -66),
+			Position = UDim2.new(0, 12, 0, 54),
+			BackgroundTransparency = 1,
+			ClipsDescendants = true,
+		}, {
+			Window.TabHolder,
+			Selector,
+			SelectorGlow,
+			SearchFrame,
+		})
+
+		-- Enhanced tab display with better typography
+		Window.TabDisplay = New("TextLabel", {
+			RichText = true,
+			Text = "Tab",
+			TextTransparency = 0,
+			FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+			TextSize = 30,
+			TextXAlignment = "Left",
+			TextYAlignment = "Center",
+			Size = UDim2.new(1, -16, 0, 32),
+			Position = UDim2.fromOffset(Window.TabWidth + 26, 54),
+			BackgroundTransparency = 1,
+			ThemeTag = {
+				TextColor3 = "Text",
+			},
+		}, {
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200)),
+				}),
+				Rotation = 90,
+			}),
+		})
+
+		-- Enhanced container with better animations
+		Window.ContainerHolder = New("Frame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+		})
+
+		Window.ContainerAnim = New("CanvasGroup", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+		})
+
+		Window.ContainerCanvas = New("Frame", {
+			Size = UDim2.new(1, -Window.TabWidth - 32, 1, -106),
+			Position = UDim2.fromOffset(Window.TabWidth + 26, 94),
+			BackgroundTransparency = 1,
+		}, {
+			Window.ContainerAnim,
+			Window.ContainerHolder
+		})
+
+		-- Enhanced root frame with shadow effect
+		Window.Root = New("Frame", {
+			BackgroundTransparency = 1,
+			Size = Window.Size,
+			Position = Window.Position,
+			Parent = Config.Parent,
+			ClipsDescendants = false,
+		}, {
+			-- Drop shadow
+			New("ImageLabel", {
+				Size = UDim2.new(1, 20, 1, 20),
+				Position = UDim2.fromOffset(-10, -10),
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://1316045217",
+				ImageColor3 = Color3.fromRGB(0, 0, 0),
+				ImageTransparency = 0.8,
+				ScaleType = Enum.ScaleType.Slice,
+				SliceCenter = Rect.new(10, 10, 118, 118),
+				ZIndex = 0,
+			}),
+			Window.AcrylicPaint.Frame,
+			Window.TabDisplay,
+			Window.ContainerCanvas,
+			TabFrame,
+			ResizeStartFrame,
+		})
+
+		Window.TitleBar = Components.TitleBar({
+			Title = Config.Title,
+			SubTitle = Config.SubTitle,
+			Parent = Window.Root,
+			Window = Window,
+		})
+
+		if Library.UseAcrylic then
+			Window.AcrylicPaint.AddParent(Window.Root)
+		end
+
+		local SizeMotor = Flipper.GroupMotor.new({
+			X = Window.Size.X.Offset,
+			Y = Window.Size.Y.Offset,
+		})
+
+		local PosMotor = Flipper.GroupMotor.new({
+			X = Window.Position.X.Offset,
+			Y = Window.Position.Y.Offset,
+		})
+
+		_G.CDDrag = 0
+		Window.SelectorPosMotor = Flipper.SingleMotor.new(17)
+		Window.SelectorSizeMotor = Flipper.SingleMotor.new(0)
+		Window.SelectorGlowMotor = Flipper.SingleMotor.new(0)
+		Window.ContainerBackMotor = Flipper.SingleMotor.new(0)
+		Window.ContainerPosMotor = Flipper.SingleMotor.new(94)
+
+		-- Enhanced size animation with better easing
+		SizeMotor:onStep(function(values)
+			task.wait(_G.CDDrag / 10)
+			Window.Root.Size = UDim2.new(0, values.X, 0, values.Y)
+		end)
+
+		PosMotor:onStep(function(values)
+			task.wait(_G.CDDrag / 10)
+			Window.Root.Position = UDim2.new(0, values.X, 0, values.Y)
+		end)
+
+		local LastValue = 0
+		local LastTime = 0
+		Window.SelectorPosMotor:onStep(function(Value)
+			Selector.Position = UDim2.new(0, 0, 0, Value + 17 + 45)
+			SelectorGlow.Position = UDim2.new(0, -2, 0, Value + 17 + 45)
+			local Now = tick()
+			local DeltaTime = Now - LastTime
+
+			if LastValue ~= nil then
+				local speed = math.abs(Value - LastValue) / (DeltaTime * 60)
+				Window.SelectorSizeMotor:setGoal(Spring(speed + 18, { frequency = 4, damping = 0.8 }))
+				Window.SelectorGlowMotor:setGoal(Spring(speed + 22, { frequency = 4, damping = 0.8 }))
+				LastValue = Value
+			end
+			LastTime = Now
+		end)
+
+		Window.SelectorSizeMotor:onStep(function(Value)
+			Selector.Size = UDim2.new(0, 4, 0, Value)
+		end)
+
+		Window.SelectorGlowMotor:onStep(function(Value)
+			SelectorGlow.Size = UDim2.new(0, 8, 0, Value)
+		end)
+
+		Window.ContainerBackMotor:onStep(function(Value)
+			Window.ContainerAnim.GroupTransparency = Value
+		end)
+
+		Window.ContainerPosMotor:onStep(function(Value)
+			Window.ContainerAnim.Position = UDim2.fromOffset(0, Value)
+		end)
+
+		local OldSizeX
+		local OldSizeY
+		Window.Maximize = function(Value, NoPos, Instant)
+			Window.Maximized = Value
+			Window.TitleBar.MaxButton.Frame.Icon.Image = Value and Components.Assets.Restore or Components.Assets.Max
+
+			if Value then
+				OldSizeX = Window.Size.X.Offset
+				OldSizeY = Window.Size.Y.Offset
+			end
+			local SizeX = Value and Camera.ViewportSize.X or OldSizeX
+			local SizeY = Value and Camera.ViewportSize.Y or OldSizeY
+			SizeMotor:setGoal({
+				X = Flipper[Instant and "Instant" or "Spring"].new(SizeX, { frequency = 6, damping = 0.9 }),
+				Y = Flipper[Instant and "Instant" or "Spring"].new(SizeY, { frequency = 6, damping = 0.9 }),
+			})
+			Window.Size = UDim2.fromOffset(SizeX, SizeY)
+
+			if not NoPos then
+				PosMotor:setGoal({
+					X = Spring(Value and 0 or Window.Position.X.Offset, { frequency = 6, damping = 0.9 }),
+					Y = Spring(Value and 0 or Window.Position.Y.Offset, { frequency = 6, damping = 0.9 }),
+				})
+			end
+		end
+
+		Creator.AddSignal(Window.TitleBar.Frame.InputBegan, function(Input)
+			if
+				Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
+				Dragging = true
+				MousePos = Input.Position
+				StartPos = Window.Root.Position
+
+				if Window.Maximized then
+					StartPos = UDim2.fromOffset(
+						Mouse.X - (Mouse.X * ((OldSizeX - 100) / Window.Root.AbsoluteSize.X)),
+						Mouse.Y - (Mouse.Y * (OldSizeY / Window.Root.AbsoluteSize.Y))
+					)
+				end
+
+				Input.Changed:Connect(function()
+					if Input.UserInputState == Enum.UserInputState.End then
+						Dragging = false
+					end
+				end)
+			end
+		end)
+
+		Creator.AddSignal(Window.TitleBar.Frame.InputChanged, function(Input)
+			if
+				Input.UserInputType == Enum.UserInputType.MouseMovement
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
+				DragInput = Input
+			end
+		end)
+
+		Creator.AddSignal(ResizeStartFrame.InputBegan, function(Input)
+			if
+				Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
+				Resizing = true
+				ResizePos = Input.Position
+			end
+		end)
+
+		Creator.AddSignal(UserInputService.InputChanged, function(Input)
+			if Input == DragInput and Dragging then
+				local Delta = Input.Position - MousePos
+				Window.Position = UDim2.fromOffset(StartPos.X.Offset + Delta.X, StartPos.Y.Offset + Delta.Y)
+				PosMotor:setGoal({
+					X = Instant(Window.Position.X.Offset),
+					Y = Instant(Window.Position.Y.Offset),
+				})
+
+				if Window.Maximized then
+					Window.Maximize(false, true, true)
+				end
+			end
+
+			if
+				(Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)
+				and Resizing
+			then
+				local Delta = Input.Position - ResizePos
+				local StartSize = Window.Size
+
+				local TargetSize = Vector3.new(StartSize.X.Offset, StartSize.Y.Offset, 0) + Vector3.new(1, 1, 0) * Delta
+				local TargetSizeClamped =
+					Vector2.new(math.clamp(TargetSize.X, 470, 2048), math.clamp(TargetSize.Y, 380, 2048))
+
+				SizeMotor:setGoal({
+					X = Flipper.Instant.new(TargetSizeClamped.X),
+					Y = Flipper.Instant.new(TargetSizeClamped.Y),
+				})
+			end
+		end)
+
+		Creator.AddSignal(UserInputService.InputEnded, function(Input)
+			if Resizing == true or Input.UserInputType == Enum.UserInputType.Touch then
+				Resizing = false
+				Window.Size = UDim2.fromOffset(SizeMotor:getValue().X, SizeMotor:getValue().Y)
+			end
+		end)
+
+		Creator.AddSignal(Window.TabHolder.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+			Window.TabHolder.CanvasSize = UDim2.new(0, 0, 0, Window.TabHolder.UIListLayout.AbsoluteContentSize.Y)
+		end)
+
+		Creator.AddSignal(UserInputService.InputBegan, function(Input)
+			if
+				type(Library.MinimizeKeybind) == "table"
+				and Library.MinimizeKeybind.Type == "Keybind"
+				and not UserInputService:GetFocusedTextBox()
+			then
+				if Input.KeyCode.Name == Library.MinimizeKeybind.Value then
+					Window:Minimize()
+				end
+			elseif Input.KeyCode == Library.MinimizeKey and not UserInputService:GetFocusedTextBox() then
+				Window:Minimize()
+			end
+		end)
+
+		function Window:Minimize()
+			Window.Minimized = not Window.Minimized
+			Window.Root.Visible = not Window.Minimized
+			if not MinimizeNotif then
+				MinimizeNotif = true
+				local Key = Library.MinimizeKeybind and Library.MinimizeKeybind.Value or Library.MinimizeKey.Name
+				if not Mobile then 
+					Library:Notify({
+						Title = "Interface",
+						Content = "Press " .. Key .. " to toggle the interface.",
+						Duration = 6
+					})
+				else 
+					Library:Notify({
+						Title = "Interface",
+						Content = "Tap the button to toggle the interface.",
+						Duration = 6
+					})
+				end
+			end
+		end
+
+		function Window:Destroy()
+			if Library.UseAcrylic then
+				Window.AcrylicPaint.Model:Destroy()
+			end
+			Window.Root:Destroy()
+		end
+
+		local DialogModule = Components.Dialog:Init(Window)
+		function Window:Dialog(Config)
+			local Dialog = DialogModule:Create()
+			Dialog.Title.Text = Config.Title
+
+			local Content = New("TextLabel", {
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+				Text = Config.Content,
+				TextColor3 = Color3.fromRGB(240, 240, 240),
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
+				Size = UDim2.new(1, -40, 1, 0),
+				Position = UDim2.fromOffset(20, 60),
+				BackgroundTransparency = 1,
+				Parent = Dialog.Root,
+				ClipsDescendants = false,
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			})
+
+			New("UISizeConstraint", {
+				MinSize = Vector2.new(300, 165),
+				MaxSize = Vector2.new(620, math.huge),
+				Parent = Dialog.Root,
+			})
+
+			Dialog.Root.Size = UDim2.fromOffset(Content.TextBounds.X + 40, 165)
+			if Content.TextBounds.X + 40 > Window.Size.X.Offset - 120 then
+				Dialog.Root.Size = UDim2.fromOffset(Window.Size.X.Offset - 120, 165)
+				Content.TextWrapped = true
+				Dialog.Root.Size = UDim2.fromOffset(Window.Size.X.Offset - 120, Content.TextBounds.Y + 150)
+			end
+
+			for _, Button in next, Config.Buttons do
+				Dialog:Button(Button.Title, Button.Callback)
+			end
+
+			Dialog:Open()
+		end
+
+		local TabModule = Components.Tab:Init(Window)
+		function Window:AddTab(TabConfig)
+			return TabModule:New(TabConfig.Title, TabConfig.Icon, Window.TabHolder)
+		end
+
+		function Window:SelectTab(Tab)
+			TabModule:SelectTab(Tab)
+		end
+
+		Creator.AddSignal(Window.TabHolder:GetPropertyChangedSignal("CanvasPosition"), function()
+			LastValue = TabModule:GetCurrentTabPos() + 16
+			LastTime = 0
+			Window.SelectorPosMotor:setGoal(Instant(TabModule:GetCurrentTabPos()))
+		end)
+
+		return Window
+	end
+end)()
+
 
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
