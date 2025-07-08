@@ -4643,7 +4643,8 @@ ElementsTable.Dropdown = (function()
 				ThemeTag = {
 					Color = "DropdownBorder",
 				},
-			}),
+			})
+			--[[
 			New("UIGradient", {
 				Color = ColorSequence.new{
 					ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 48, 48)),
@@ -4661,6 +4662,7 @@ ElementsTable.Dropdown = (function()
 				ImageColor3 = Color3.fromRGB(0, 0, 0),
 				ImageTransparency = 0.05,
 			}),
+			]]
 		})
 
 		local DropdownHolderCanvas = New("Frame", {
