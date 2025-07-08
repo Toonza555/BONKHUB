@@ -2210,7 +2210,7 @@ Components.Tab = (function()
 				Icon = nil
 			end
 		end
-        --[[
+		
 		Tab.Frame = New("TextButton", {
 			Size = UDim2.new(1, 0, 0, 34),
 			BackgroundTransparency = 1,
@@ -2254,58 +2254,6 @@ Components.Tab = (function()
 				},
 			}),
 		})
-		]]
-		Tab.Frame = New("TextButton", {
-        	--Name = "Tab_" .. Title,
-        	Size = UDim2.new(1, 0, 0, 38),
-        	BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-        	AutoButtonColor = false,
-        	BorderSizePixel = 0,
-        	Parent = Parent,
-        	ThemeTag = {
-        		BackgroundColor3 = "Tab",
-        	},
-        }, {
-        	New("UICorner", {
-        		CornerRadius = UDim.new(0, 10),
-        	}),
-        	New("UIStroke", {
-        		Color = Color3.fromRGB(70, 70, 70),
-        		Thickness = 1,
-        		Transparency = 0.4,
-        	}),
-        	New("TextLabel", {
-        		Name = "TabTitle",
-        		AnchorPoint = Vector2.new(0, 0.5),
-        		Position = UDim2.new(0, Icon and 36 or 14, 0.5, 0),
-        		Text = Title,
-        		RichText = true,
-        		Font = Enum.Font.GothamMedium,
-        		TextColor3 = Color3.fromRGB(240, 240, 240),
-        		TextSize = 13,
-        		TextXAlignment = Enum.TextXAlignment.Left,
-        		Size = UDim2.new(1, -50, 1, 0),
-        		BackgroundTransparency = 1,
-        		ThemeTag = {
-        			TextColor3 = "Text",
-        		},
-        	}),
-        	New("ImageLabel", {
-        		Name = "TabIcon",
-        		AnchorPoint = Vector2.new(0, 0.5),
-        		Size = UDim2.fromOffset(20, 20),
-        		Position = UDim2.new(0, 10, 0.5, 0),
-        		BackgroundTransparency = 1,
-        		Image = Icon or "",
-        		ThemeTag = {
-        			ImageColor3 = "Text",
-        		},
-        	}),
-        	New("UIPadding", {
-        		PaddingLeft = UDim.new(0, 6),
-        		PaddingRight = UDim.new(0, 6),
-        	}),
-        })
 
 		local ContainerLayout = New("UIListLayout", {
 			Padding = UDim.new(0, 5),
@@ -3706,7 +3654,7 @@ end)()
 
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
-
+--[[
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -3739,6 +3687,93 @@ ElementsTable.Button = (function()
 
 	return Element
 end)()
+]]
+ElementsTable.Button = (function()
+	local Element = {}
+	Element.__index = Element
+	Element.__type = "Button"
+
+	function Element:New(Config)
+		assert(Config.Title, "Button - Missing Title")
+		Config.Callback = Config.Callback or function() end
+
+		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
+
+		local StyledButton = New("TextButton", {
+			Text = "",
+			AutoButtonColor = false,
+			BackgroundTransparency = 0,
+			Size = UDim2.new(1, -20, 0, 32),
+			Position = UDim2.new(0, 10, 1, -40),
+			AnchorPoint = Vector2.new(0, 1),
+			ThemeTag = {
+				BackgroundColor3 = "ButtonBackground",
+			},
+			Parent = ButtonFrame.Frame,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			New("UIStroke", {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Transparency = 0.4,
+				ThemeTag = {
+					Color = "InElementBorder",
+				},
+			}),
+			New("TextLabel", {
+				Text = Config.Title,
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+				TextColor3 = Color3.fromRGB(240, 240, 240),
+				TextSize = 14,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				ZIndex = 2,
+				ThemeTag = {
+					TextColor3 = "Text",
+				}
+			}),
+			New("ImageLabel", {
+				Image = "rbxassetid://10709791437",
+				Size = UDim2.fromOffset(16, 16),
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -10, 0.5, 0),
+				BackgroundTransparency = 1,
+				ZIndex = 2,
+				ThemeTag = {
+					ImageColor3 = "Text",
+				},
+			})
+		})
+
+		local BackMotor, SetBack = Creator.SpringMotor(1, StyledButton, "BackgroundTransparency")
+
+		Creator.AddSignal(StyledButton.MouseEnter, function()
+			SetBack(0.05)
+		end)
+
+		Creator.AddSignal(StyledButton.MouseLeave, function()
+			SetBack(0)
+		end)
+
+		Creator.AddSignal(StyledButton.MouseButton1Down, function()
+			SetBack(0.1)
+		end)
+
+		Creator.AddSignal(StyledButton.MouseButton1Up, function()
+			SetBack(0.05)
+		end)
+
+		Creator.AddSignal(StyledButton.MouseButton1Click, function()
+			Library:SafeCallback(Config.Callback)
+		end)
+
+		return ButtonFrame
+	end
+
+	return Element
+end)()
+
 ElementsTable.Toggle = (function()
 	local Element = {}
 	Element.__index = Element
@@ -3840,6 +3875,7 @@ ElementsTable.Toggle = (function()
 
 	return Element
 end)()
+
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -3990,7 +4026,8 @@ ElementsTable.Dropdown = (function()
 			}),
 		})
 		table.insert(Library.OpenFrames, DropdownHolderCanvas)
-
+        
+        --[[
 		local function RecalculateListPosition()
 			local Add = -40
 			if Camera.ViewportSize.Y - DropdownInner.AbsolutePosition.Y < DropdownHolderCanvas.AbsoluteSize.Y - 5 then
@@ -4002,6 +4039,25 @@ ElementsTable.Dropdown = (function()
 			DropdownHolderCanvas.Position =
 				UDim2.fromOffset(DropdownInner.AbsolutePosition.X - 1, DropdownInner.AbsolutePosition.Y - 5 - Add)
 		end
+		]]
+		local function RecalculateListPosition()
+        	local dropAbsPos = DropdownInner.AbsolutePosition
+        	local dropAbsSize = DropdownInner.AbsoluteSize
+        
+        	local newX = dropAbsPos.X + dropAbsSize.X + 6 -- วางขวาของ dropdownInner (เพิ่ม 6 px ระยะห่าง)
+        	local newY = dropAbsPos.Y
+        
+        	if newX + DropdownHolderCanvas.AbsoluteSize.X > Camera.ViewportSize.X then
+        		newX = dropAbsPos.X - DropdownHolderCanvas.AbsoluteSize.X - 6
+        	end
+        
+        	local bottomY = newY + DropdownHolderCanvas.AbsoluteSize.Y
+        	if bottomY > Camera.ViewportSize.Y then
+        		newY = Camera.ViewportSize.Y - DropdownHolderCanvas.AbsoluteSize.Y - 10
+        	end
+        
+        	DropdownHolderCanvas.Position = UDim2.fromOffset(newX, newY)
+        end
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
