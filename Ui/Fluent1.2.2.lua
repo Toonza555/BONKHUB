@@ -3654,7 +3654,7 @@ end)()
 
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
---[[
+
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -3679,92 +3679,6 @@ ElementsTable.Button = (function()
 		})
 
 		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
-			Library:SafeCallback(Config.Callback)
-		end)
-
-		return ButtonFrame
-	end
-
-	return Element
-end)()
-]]
-ElementsTable.Button = (function()
-	local Element = {}
-	Element.__index = Element
-	Element.__type = "Button"
-
-	function Element:New(Config)
-		assert(Config.Title, "Button - Missing Title")
-		Config.Callback = Config.Callback or function() end
-
-		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
-
-		local StyledButton = New("TextButton", {
-			Text = "",
-			AutoButtonColor = false,
-			BackgroundTransparency = 0,
-			Size = UDim2.new(1, -20, 0, 32),
-			Position = UDim2.new(0, 10, 1, -40),
-			AnchorPoint = Vector2.new(0, 1),
-			ThemeTag = {
-				BackgroundColor3 = "ButtonBackground",
-			},
-			Parent = ButtonFrame.Frame,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-			New("UIStroke", {
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Transparency = 0.4,
-				ThemeTag = {
-					Color = "InElementBorder",
-				},
-			}),
-			New("TextLabel", {
-				Text = Config.Title,
-				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
-				TextColor3 = Color3.fromRGB(240, 240, 240),
-				TextSize = 14,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(1, 1),
-				ZIndex = 2,
-				ThemeTag = {
-					TextColor3 = "Text",
-				}
-			}),
-			New("ImageLabel", {
-				Image = "rbxassetid://10709791437",
-				Size = UDim2.fromOffset(16, 16),
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -10, 0.5, 0),
-				BackgroundTransparency = 1,
-				ZIndex = 2,
-				ThemeTag = {
-					ImageColor3 = "Text",
-				},
-			})
-		})
-
-		local BackMotor, SetBack = Creator.SpringMotor(1, StyledButton, "BackgroundTransparency")
-
-		Creator.AddSignal(StyledButton.MouseEnter, function()
-			SetBack(0.05)
-		end)
-
-		Creator.AddSignal(StyledButton.MouseLeave, function()
-			SetBack(0)
-		end)
-
-		Creator.AddSignal(StyledButton.MouseButton1Down, function()
-			SetBack(0.1)
-		end)
-
-		Creator.AddSignal(StyledButton.MouseButton1Up, function()
-			SetBack(0.05)
-		end)
-
-		Creator.AddSignal(StyledButton.MouseButton1Click, function()
 			Library:SafeCallback(Config.Callback)
 		end)
 
@@ -3876,6 +3790,9 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
+
+
+
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -3906,11 +3823,9 @@ ElementsTable.Dropdown = (function()
 		Dropdown.Visible = DropdownFrame.Visible
 		Dropdown.Elements = DropdownFrame
 
-		local DropdownDisplay = New("TextBox", {
+		local DropdownDisplay = New("TextLabel", {
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
-			Text = "",
-			PlaceholderText = "Value",
-			PlaceholderColor3 = Color3.fromRGB(240, 240, 240),
+			Text = "--",
 			TextColor3 = Color3.fromRGB(240, 240, 240),
 			TextSize = 14,
 			AutomaticSize = Enum.AutomaticSize.Y,
@@ -3922,10 +3837,8 @@ ElementsTable.Dropdown = (function()
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			Interactable = Dropdown.Searchable,
 			ThemeTag = {
 				TextColor3 = "Text",
-				PlaceholderColor3 = "Text"
 			},
 		})
 
@@ -3965,13 +3878,46 @@ ElementsTable.Dropdown = (function()
 			DropdownDisplay,
 		})
 
+		-- Search Box (จะแสดงแค่ตอนที่ Searchable เป็น true)
+		local SearchBox = New("TextBox", {
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
+			Text = "",
+			PlaceholderText = "Search...",
+			PlaceholderColor3 = Color3.fromRGB(150, 150, 150),
+			TextColor3 = Color3.fromRGB(240, 240, 240),
+			TextSize = 13,
+			TextYAlignment = Enum.TextYAlignment.Center,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Size = UDim2.new(1, -10, 0, 25),
+			Position = UDim2.fromOffset(5, 5),
+			BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+			BackgroundTransparency = 0.3,
+			Visible = Dropdown.Searchable,
+			ThemeTag = {
+				TextColor3 = "Text",
+				PlaceholderColor3 = "SubText",
+				BackgroundColor3 = "SearchBox",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 4),
+			}),
+			New("UIStroke", {
+				Transparency = 0.7,
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				ThemeTag = {
+					Color = "InElementBorder",
+				},
+			}),
+		})
+
 		local DropdownListLayout = New("UIListLayout", {
 			Padding = UDim.new(0, 3),
 		})
 
 		local DropdownScrollFrame = New("ScrollingFrame", {
-			Size = UDim2.new(1, -5, 1, -10),
-			Position = UDim2.fromOffset(5, 5),
+			Size = Dropdown.Searchable and UDim2.new(1, -5, 1, -40) or UDim2.new(1, -5, 1, -10),
+			Position = Dropdown.Searchable and UDim2.fromOffset(5, 35) or UDim2.fromOffset(5, 5),
 			BackgroundTransparency = 1,
 			BottomImage = "rbxassetid://6889812791",
 			MidImage = "rbxassetid://6889812721",
@@ -3992,6 +3938,7 @@ ElementsTable.Dropdown = (function()
 				BackgroundColor3 = "DropdownHolder",
 			},
 		}, {
+			SearchBox,
 			DropdownScrollFrame,
 			New("UICorner", {
 				CornerRadius = UDim.new(0, 7),
@@ -4027,19 +3974,6 @@ ElementsTable.Dropdown = (function()
 		})
 		table.insert(Library.OpenFrames, DropdownHolderCanvas)
         
-        --[[
-		local function RecalculateListPosition()
-			local Add = -40
-			if Camera.ViewportSize.Y - DropdownInner.AbsolutePosition.Y < DropdownHolderCanvas.AbsoluteSize.Y - 5 then
-				Add = DropdownHolderCanvas.AbsoluteSize.Y
-				- 5
-				- (Camera.ViewportSize.Y - DropdownInner.AbsolutePosition.Y)
-					+ 40
-			end
-			DropdownHolderCanvas.Position =
-				UDim2.fromOffset(DropdownInner.AbsolutePosition.X - 1, DropdownInner.AbsolutePosition.Y - 5 - Add)
-		end
-		]]
 		local function RecalculateListPosition()
         	local dropAbsPos = DropdownInner.AbsolutePosition
         	local dropAbsSize = DropdownInner.AbsoluteSize
@@ -4061,15 +3995,32 @@ ElementsTable.Dropdown = (function()
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
+			local baseHeight = Dropdown.Searchable and 40 or 10 -- เพิ่มพื้นที่สำหรับ search box
+			local maxHeight = Dropdown.Searchable and 432 or 392 -- ปรับ max height ตาม search box
+			
 			if #Dropdown.Values > 10 then
-				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, maxHeight)
 			else
-				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + baseHeight)
 			end
 		end
 
 		local function RecalculateCanvasSize()
 			DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0, DropdownListLayout.AbsoluteContentSize.Y)
+		end
+
+		-- ฟังก์ชันสำหรับกรองรายการตามการค้นหา
+		local function FilterItems(searchText)
+			for _, Element in next, DropdownScrollFrame:GetChildren() do
+				if not Element:IsA("UIListLayout") then
+					local Value = Element.ButtonLabel.Text
+					local shouldShow = searchText == "" or Value:lower():find(searchText:lower(), 1, true) ~= nil
+					Element.Visible = shouldShow
+				end
+			end
+			
+			RecalculateCanvasSize()
+			RecalculateListSize()
 		end
 
 		RecalculateListPosition()
@@ -4095,44 +4046,20 @@ ElementsTable.Dropdown = (function()
 			end
 		end)
 
-		Creator.AddSignal(DropdownDisplay:GetPropertyChangedSignal("Text"), function()
-			local Text = DropdownDisplay.Text
-			if #Text == 0 then
-				for _, Element in next, DropdownScrollFrame:GetChildren() do
-					if not Element:IsA("UIListLayout") then
-						local Value = Element.ButtonLabel.Text
-						local Similar = Value:lower():match(Text:lower()) or Value:lower() == Text:lower()
-						Element.Visible = true
-					end
-				end
-			end
-			for _, Element in next, DropdownScrollFrame:GetChildren() do
-				if not Element:IsA("UIListLayout") then
-					local Value = Element.ButtonLabel.Text
-					local Similar = Value:lower():match(Text:lower()) or Value:lower() == Text:lower()
-					Element.Visible = Similar and true or false
-				end
-			end
+		-- Event สำหรับ SearchBox
+		if Dropdown.Searchable then
+			Creator.AddSignal(SearchBox:GetPropertyChangedSignal("Text"), function()
+				FilterItems(SearchBox.Text)
+			end)
 
+			Creator.AddSignal(SearchBox.Focused, function()
+				-- ไม่ต้องล้างข้อความเมื่อ focus แล้ว
+			end)
 
-			RecalculateListPosition()
-			RecalculateListSize()
-		end)
-
-		Creator.AddSignal(DropdownDisplay.Focused, function()
-			DropdownDisplay.Text = ""
-		end)
-
-		Creator.AddSignal(DropdownDisplay.FocusLost, function(Enter, Input)
-			if #DropdownDisplay.Text > 0 then
-				local Tick = tick()
-				repeat wait() until tick() - Tick > 5 or DropdownDisplay:IsFocused()
-				if not DropdownDisplay:IsFocused() then
-					DropdownDisplay.Text = ""
-					Dropdown:Display()
-				end
-			end
-		end)
+			Creator.AddSignal(SearchBox.FocusLost, function()
+				-- ไม่ต้องทำอะไรเมื่อ focus หาย
+			end)
+		end
 
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
 			if
@@ -4154,9 +4081,15 @@ ElementsTable.Dropdown = (function()
 		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
 			Dropdown.Opened = true
-			DropdownDisplay.Interactable = Dropdown.Searchable and true or false
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
+			
+			-- ล้าง search box เมื่อเปิด dropdown
+			if Dropdown.Searchable then
+				SearchBox.Text = ""
+				FilterItems("")
+			end
+			
 			TweenService:Create(
 				DropdownHolderFrame,
 				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
@@ -4167,15 +4100,17 @@ ElementsTable.Dropdown = (function()
 				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 0 }
 			):Play()
+			
+			-- Focus ที่ search box ทันทีเมื่อเปิด dropdown (ถ้าเปิดใช้งาน)
 			if Dropdown.Searchable then
-				DropdownDisplay:CaptureFocus()
+				wait(0.1) -- รอให้ animation เสร็จเสียก่อน
+				SearchBox:CaptureFocus()
 			end
 		end
 
 		function Dropdown:Close()
 			Dropdown.Opened = false
 			ScrollFrame.ScrollingEnabled = true
-			DropdownDisplay.Interactable = false
 			DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
 			DropdownHolderCanvas.Visible = false
 			TweenService:Create(
@@ -4183,8 +4118,11 @@ ElementsTable.Dropdown = (function()
 				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 180 }
 			):Play()
-			DropdownDisplay:ReleaseFocus(false)
-			Dropdown:Display()
+			
+			-- ปล่อย focus จาก search box
+			if Dropdown.Searchable then
+				SearchBox:ReleaseFocus(false)
+			end
 		end
 
 		function Dropdown:Display()
@@ -4202,7 +4140,7 @@ ElementsTable.Dropdown = (function()
 				Str = Dropdown.Value or ""
 			end
 
-			DropdownDisplay.PlaceholderText = (Str == "" and "--" or Str)
+			DropdownDisplay.Text = (Str == "" and "--" or Str)
 		end
 
 		function Dropdown:GetActiveValues()
@@ -4355,12 +4293,7 @@ ElementsTable.Dropdown = (function()
 						end
 
 						Table:UpdateButton()
-
-						if Dropdown.Searchable and #DropdownDisplay.Text > 0 then
-
-						else
-							Dropdown:Display()
-						end
+						Dropdown:Display()
 
 						Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
 						Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
@@ -4475,6 +4408,8 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
+
+
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
 	Paragraph.__index = Paragraph
