@@ -6859,6 +6859,7 @@ return function(property, bindableEvent)
 											}
 										}
 									},
+									--[[
 									new "TextButton" {
 										Size = UDim2.fromOffset(32,32),
 										BackgroundColor3 = theme.selectedTab,
@@ -6885,7 +6886,7 @@ return function(property, bindableEvent)
 												ImageTransparency = 0
 											}
 										}
-									},
+									},]]
 									new "TextButton" {
 										Size = UDim2.fromOffset(32,32),
 										BackgroundColor3 = theme.selectedTab,
