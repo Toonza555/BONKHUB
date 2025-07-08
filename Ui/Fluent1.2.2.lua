@@ -4679,272 +4679,64 @@ ElementsTable.Button = (function()
 	Element.__index = Element
 	Element.__type = "Button"
 
-	-- Default configuration
-	local DefaultConfig = {
-		Title = "Button",
-		Description = nil,
-		Callback = function() end,
-		Disabled = false,
-		Icon = "rbxassetid://10709791437",
-		IconSize = UDim2.fromOffset(16, 16),
-		ConfirmAction = false,
-		ConfirmText = "Are you sure?",
-		Keybind = nil,
-		RichText = false
-	}
-
 	function Element:New(Config)
-		-- Merge with defaults
-		Config = Config or {}
-		for key, value in pairs(DefaultConfig) do
-			if Config[key] == nil then
-				Config[key] = value
-			end
-		end
+		assert(Config.Title, "Button - Missing Title")
+		Config.Callback = Config.Callback or function() end
 
-		-- Validation
-		assert(type(Config.Title) == "string", "Button - Title must be a string")
-		assert(type(Config.Callback) == "function", "Button - Callback must be a function")
-
-		local self = setmetatable({}, Element)
-		self.Config = Config
-		self.Disabled = Config.Disabled
-		self.OriginalCallback = Config.Callback
-
-		-- Create main frame
 		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
-		self.Frame = ButtonFrame.Frame
-		self.ButtonFrame = ButtonFrame
 
-		-- Create icon
-		self.Icon = New("ImageLabel", {
-			Image = Config.Icon,
-			Size = Config.IconSize,
+		-- Create icon with better positioning
+		local ButtonIcon = New("ImageLabel", {
+			Image = "rbxassetid://10709791437",
+			Size = UDim2.fromOffset(16, 16),
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, 0),
+			Position = UDim2.new(1, -12, 0.5, 0),
 			BackgroundTransparency = 1,
 			Parent = ButtonFrame.Frame,
 			ThemeTag = {
-				ImageColor3 = self.Disabled and "TextDisabled" or "Text",
+				ImageColor3 = "Text",
 			},
 		})
 
-		-- Add hover effects
-		self:SetupHoverEffects()
-
-		-- Add click handler
-		self.ClickConnection = Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
-			self:OnClick()
-		end)
-
-		-- Add keybind support
-		if Config.Keybind then
-			self:SetKeybind(Config.Keybind)
-		end
-
-		-- Apply initial state
-		self:UpdateState()
-
-		return self
-	end
-
-	function Element:SetupHoverEffects()
-		if self.Disabled then return end
-
-		local frame = self.Frame
-		local originalTransparency = frame.BackgroundTransparency
-
-		Creator.AddSignal(frame.MouseEnter, function()
-			if not self.Disabled then
-				Library:Tween(frame, 0.2, {BackgroundTransparency = originalTransparency - 0.1})
-				Library:Tween(self.Icon, 0.2, {ImageTransparency = 0.2})
-			end
-		end)
-
-		Creator.AddSignal(frame.MouseLeave, function()
-			if not self.Disabled then
-				Library:Tween(frame, 0.2, {BackgroundTransparency = originalTransparency})
-				Library:Tween(self.Icon, 0.2, {ImageTransparency = 0})
-			end
-		end)
-	end
-
-	function Element:OnClick()
-		if self.Disabled then return end
-
-		-- Visual feedback
-		self:AnimateClick()
-
-		-- Confirmation dialog
-		if self.Config.ConfirmAction then
-			self:ShowConfirmation()
-		else
-			self:ExecuteCallback()
-		end
-	end
-
-	function Element:AnimateClick()
-		local frame = self.Frame
-		local icon = self.Icon
+		-- Add subtle hover effect
+		local originalTransparency = ButtonFrame.Frame.BackgroundTransparency
 		
-		-- Quick scale animation
-		Library:Tween(frame, 0.1, {
-			Size = frame.Size - UDim2.fromOffset(2, 2)
-		})
-		
-		Library:Tween(icon, 0.1, {
-			Size = icon.Size - UDim2.fromOffset(2, 2)
-		})
-
-		wait(0.1)
-
-		Library:Tween(frame, 0.1, {
-			Size = frame.Size + UDim2.fromOffset(2, 2)
-		})
-		
-		Library:Tween(icon, 0.1, {
-			Size = icon.Size + UDim2.fromOffset(2, 2)
-		})
-	end
-
-	function Element:ShowConfirmation()
-		-- Create confirmation dialog
-		local confirmFrame = New("Frame", {
-			Size = UDim2.new(0, 200, 0, 80),
-			Position = UDim2.new(0.5, -100, 0.5, -40),
-			BackgroundColor3 = Color3.new(0.1, 0.1, 0.1),
-			BorderSizePixel = 1,
-			BorderColor3 = Color3.new(0.3, 0.3, 0.3),
-			Parent = Library.ScreenGui,
-			ZIndex = 1000
-		})
-
-		local confirmText = New("TextLabel", {
-			Size = UDim2.new(1, -20, 0, 30),
-			Position = UDim2.new(0, 10, 0, 10),
-			BackgroundTransparency = 1,
-			Text = self.Config.ConfirmText,
-			TextColor3 = Color3.new(1, 1, 1),
-			TextScaled = true,
-			Parent = confirmFrame
-		})
-
-		local yesButton = New("TextButton", {
-			Size = UDim2.new(0, 60, 0, 25),
-			Position = UDim2.new(0, 30, 1, -35),
-			BackgroundColor3 = Color3.new(0.2, 0.6, 0.2),
-			Text = "Yes",
-			TextColor3 = Color3.new(1, 1, 1),
-			BorderSizePixel = 0,
-			Parent = confirmFrame
-		})
-
-		local noButton = New("TextButton", {
-			Size = UDim2.new(0, 60, 0, 25),
-			Position = UDim2.new(1, -90, 1, -35),
-			BackgroundColor3 = Color3.new(0.6, 0.2, 0.2),
-			Text = "No",
-			TextColor3 = Color3.new(1, 1, 1),
-			BorderSizePixel = 0,
-			Parent = confirmFrame
-		})
-
-		Creator.AddSignal(yesButton.MouseButton1Click, function()
-			confirmFrame:Destroy()
-			self:ExecuteCallback()
+		Creator.AddSignal(ButtonFrame.Frame.MouseEnter, function()
+			Library:Tween(ButtonFrame.Frame, 0.15, {
+				BackgroundTransparency = math.max(0, originalTransparency - 0.05)
+			})
+			Library:Tween(ButtonIcon, 0.15, {
+				ImageTransparency = 0.2
+			})
 		end)
 
-		Creator.AddSignal(noButton.MouseButton1Click, function()
-			confirmFrame:Destroy()
+		Creator.AddSignal(ButtonFrame.Frame.MouseLeave, function()
+			Library:Tween(ButtonFrame.Frame, 0.15, {
+				BackgroundTransparency = originalTransparency
+			})
+			Library:Tween(ButtonIcon, 0.15, {
+				ImageTransparency = 0
+			})
 		end)
-	end
 
-	function Element:ExecuteCallback()
-		Library:SafeCallback(self.OriginalCallback)
-	end
-
-	function Element:SetTitle(newTitle)
-		assert(type(newTitle) == "string", "Title must be a string")
-		self.Config.Title = newTitle
-		self.ButtonFrame.Title.Text = newTitle
-	end
-
-	function Element:SetDescription(newDescription)
-		self.Config.Description = newDescription
-		if self.ButtonFrame.Description then
-			self.ButtonFrame.Description.Text = newDescription or ""
-			self.ButtonFrame.Description.Visible = newDescription ~= nil
-		end
-	end
-
-	function Element:SetIcon(newIcon)
-		self.Config.Icon = newIcon
-		self.Icon.Image = newIcon
-	end
-
-	function Element:SetCallback(newCallback)
-		assert(type(newCallback) == "function", "Callback must be a function")
-		self.OriginalCallback = newCallback
-	end
-
-	function Element:SetDisabled(disabled)
-		self.Disabled = disabled
-		self:UpdateState()
-	end
-
-	function Element:SetKeybind(keycode)
-		if self.KeybindConnection then
-			self.KeybindConnection:Disconnect()
-		end
-
-		if keycode then
-			self.KeybindConnection = Creator.AddSignal(game:GetService("UserInputService").InputBegan, function(input, gameProcessed)
-				if gameProcessed then return end
-				if input.KeyCode == keycode then
-					self:OnClick()
-				end
+		-- Add click animation
+		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
+			-- Quick scale feedback
+			Library:Tween(ButtonFrame.Frame, 0.08, {
+				Size = ButtonFrame.Frame.Size - UDim2.fromOffset(1, 1)
+			})
+			
+			spawn(function()
+				wait(0.08)
+				Library:Tween(ButtonFrame.Frame, 0.08, {
+					Size = ButtonFrame.Frame.Size + UDim2.fromOffset(1, 1)
+				})
 			end)
-		end
-	end
 
-	function Element:UpdateState()
-		local transparency = self.Disabled and 0.5 or 0
-		local textColor = self.Disabled and "TextDisabled" or "Text"
+			Library:SafeCallback(Config.Callback)
+		end)
 
-		self.Frame.BackgroundTransparency = transparency
-		self.Icon.ImageTransparency = transparency
-		
-		if self.ButtonFrame.Title then
-			self.ButtonFrame.Title.TextTransparency = transparency
-		end
-
-		-- Update theme tags
-		self.Icon.ThemeTag.ImageColor3 = textColor
-		
-		-- Remove hover effects if disabled
-		if self.Disabled then
-			self.Frame.BackgroundTransparency = 0.5
-		end
-	end
-
-	function Element:Toggle()
-		self:SetDisabled(not self.Disabled)
-	end
-
-	function Element:Click()
-		self:OnClick()
-	end
-
-	function Element:Destroy()
-		if self.ClickConnection then
-			self.ClickConnection:Disconnect()
-		end
-		if self.KeybindConnection then
-			self.KeybindConnection:Disconnect()
-		end
-		if self.ButtonFrame.Frame then
-			self.ButtonFrame.Frame:Destroy()
-		end
+		return ButtonFrame
 	end
 
 	return Element
