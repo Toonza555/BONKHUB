@@ -3323,7 +3323,6 @@ Components.Textbox = (function()
 	end
 end)()
 
---[[
 Components.TitleBar = (function()
 	local New = Creator.New
 	local AddSignal = Creator.AddSignal
@@ -3485,242 +3484,7 @@ Components.TitleBar = (function()
 		return TitleBar
 	end
 end)()
-]]
-Components.TitleBar = (function()
-	local New = Creator.New
-	local AddSignal = Creator.AddSignal
 
-	return function(Config)
-		local TitleBar = {}
-
-		local function BarButton(Icon, Pos, Parent, Callback)
-			local Button = {
-				Callback = Callback or function() end,
-			}
-
-			Button.Frame = New("TextButton", {
-				Size = UDim2.new(0, 34, 1, -8),
-				AnchorPoint = Vector2.new(1, 0),
-				BackgroundTransparency = 1,
-				Parent = Parent,
-				Position = Pos,
-				Text = "",
-				ThemeTag = {
-					BackgroundColor3 = "Text",
-				},
-			}, {
-				New("UICorner", {
-					CornerRadius = UDim.new(0, 7),
-				}),
-				New("ImageLabel", {
-					Image = Icon,
-					Size = UDim2.fromOffset(16, 16),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					BackgroundTransparency = 1,
-					Name = "Icon",
-					ThemeTag = {
-						ImageColor3 = "Text",
-					},
-				}),
-			})
-
-			local Motor, SetTransparency = Creator.SpringMotor(1, Button.Frame, "BackgroundTransparency")
-
-			AddSignal(Button.Frame.MouseEnter, function()
-				SetTransparency(0.94)
-			end)
-			AddSignal(Button.Frame.MouseLeave, function()
-				SetTransparency(1, true)
-			end)
-			AddSignal(Button.Frame.MouseButton1Down, function()
-				SetTransparency(0.96)
-			end)
-			AddSignal(Button.Frame.MouseButton1Up, function()
-				SetTransparency(0.94)
-			end)
-			AddSignal(Button.Frame.MouseButton1Click, Button.Callback)
-
-			Button.SetCallback = function(Func)
-				Button.Callback = Func
-			end
-
-			return Button
-		end
-
-		TitleBar.Frame = New("Frame", {
-			Size = UDim2.new(1, 0, 0, 42),
-			BackgroundTransparency = 1,
-			Parent = Config.Parent,
-		}, {
-			-- Logo Container (Left side)
-			New("Frame", {
-				Size = UDim2.new(0, 50, 1, 0),
-				Position = UDim2.new(0, 8, 0, 0),
-				BackgroundTransparency = 1,
-				Name = "LogoContainer",
-			}, {
-				New("ImageLabel", {
-					Image = Config.Logo or "rbxassetid://0", -- Default empty logo
-					Size = UDim2.fromOffset(28, 28),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					BackgroundTransparency = 1,
-					Name = "Logo",
-					ZIndex = 3
-					ScaleType = Enum.ScaleType.Fit,
-					ThemeTag = {
-						ImageColor3 = "Text",
-					},
-				}, {
-					New("UICorner", {
-						CornerRadius = UDim.new(0, 6),
-					}),
-					New("UIStroke", {
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Transparency = 0.8,
-						Thickness = 1,
-						ThemeTag = {
-							Color = "ElementBorder",
-						},
-					}),
-				}),
-			}),
-			
-			-- Title and Subtitle Container (Center)
-			New("Frame", {
-				Size = UDim2.new(1, -120, 1, 0), -- Adjusted to account for logo and buttons
-				Position = UDim2.new(0, 58, 0, 0),
-				BackgroundTransparency = 1,
-				Name = "TitleContainer",
-			}, {
-				New("UIListLayout", {
-					Padding = UDim.new(0, 6),
-					FillDirection = Enum.FillDirection.Horizontal,
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					VerticalAlignment = Enum.VerticalAlignment.Center,
-				}),
-
-				New("TextLabel", {
-					RichText = true,
-					Text = Config.Title,
-					FontFace = Font.new(
-						"rbxasset://fonts/families/GothamSSm.json",
-						Enum.FontWeight.SemiBold,
-						Enum.FontStyle.Normal
-					),
-					TextSize = 13,
-					TextXAlignment = "Left",
-					TextYAlignment = "Center",
-					Size = UDim2.fromScale(0, 1),
-					AutomaticSize = Enum.AutomaticSize.X,
-					BackgroundTransparency = 1,
-					LayoutOrder = 1,
-					ThemeTag = {
-						TextColor3 = "Text",
-					},
-				}),
-				
-				Config.SubTitle and New("TextLabel", {
-					RichText = true,
-					Text = "• " .. Config.SubTitle,
-					TextTransparency = 0.5,
-					FontFace = Font.new(
-						"rbxasset://fonts/families/GothamSSm.json",
-						Enum.FontWeight.Regular,
-						Enum.FontStyle.Normal
-					),
-					TextSize = 12,
-					TextXAlignment = "Left",
-					TextYAlignment = "Center",
-					Size = UDim2.fromScale(0, 1),
-					AutomaticSize = Enum.AutomaticSize.X,
-					BackgroundTransparency = 1,
-					LayoutOrder = 2,
-					ThemeTag = {
-						TextColor3 = "Text",
-					},
-				}) or nil,
-			}),
-			
-			-- Bottom border line
-			New("Frame", {
-				BackgroundTransparency = 0.5,
-				Size = UDim2.new(1, 0, 0, 1),
-				Position = UDim2.new(0, 0, 1, 0),
-				ThemeTag = {
-					BackgroundColor3 = "TitleBarLine",
-				},
-			}),
-		})
-
-		-- Store logo reference for easy access
-		TitleBar.Logo = TitleBar.Frame.LogoContainer.Logo
-
-		-- Function to update logo
-		function TitleBar:SetLogo(imageId)
-			TitleBar.Logo.Image = imageId or "rbxassetid://0"
-		end
-
-		-- Add hover effect to logo
-		local LogoMotor, SetLogoTransparency = Creator.SpringMotor(0, TitleBar.Logo, "ImageTransparency")
-		
-		AddSignal(TitleBar.Logo.MouseEnter, function()
-			SetLogoTransparency(0.2)
-		end)
-		
-		AddSignal(TitleBar.Logo.MouseLeave, function()
-			SetLogoTransparency(0)
-		end)
-
-		-- Make logo clickable if callback is provided
-		if Config.LogoCallback then
-			local LogoButton = New("TextButton", {
-				Size = UDim2.fromScale(1, 1),
-				BackgroundTransparency = 1,
-				Text = "",
-				Parent = TitleBar.Frame.LogoContainer,
-				ZIndex = 4,
-			})
-			
-			AddSignal(LogoButton.MouseButton1Click, Config.LogoCallback)
-		end
-
-		-- Close button
-		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
-			Library.Window:Dialog({
-				Title = "Close",
-				Content = "Are you sure you want to unload the interface?",
-				Buttons = {
-					{
-						Title = "Yes",
-						Callback = function()
-							Library:Destroy()
-							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
-                                game:GetService("CoreGui").BONKHUBMODILE:Destroy()
-                            end
-						end,
-					},
-					{
-						Title = "No",
-					},
-				},
-			})
-		end)
-
-		--[[
-		-- Optional: Maximize and Minimize buttons (currently commented out)
-		TitleBar.MaxButton = BarButton(Components.Assets.Max, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
-			Config.Window.Maximize(not Config.Window.Maximized)
-		end)
-		TitleBar.MinButton = BarButton(Components.Assets.Min, UDim2.new(1, -80, 0, 4), TitleBar.Frame, function()
-			Library.Window:Minimize()
-		end)
-		]]
-
-		return TitleBar
-	end
-end)()
 --[[
 Components.Window = (function()
 	local Spring = Flipper.Spring.new
@@ -4875,6 +4639,7 @@ end)()
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
 
+--[[
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4903,6 +4668,283 @@ ElementsTable.Button = (function()
 		end)
 
 		return ButtonFrame
+	end
+
+	return Element
+end)()
+
+]]
+ElementsTable.Button = (function()
+	local Element = {}
+	Element.__index = Element
+	Element.__type = "Button"
+
+	-- Default configuration
+	local DefaultConfig = {
+		Title = "Button",
+		Description = nil,
+		Callback = function() end,
+		Disabled = false,
+		Icon = "rbxassetid://10709791437",
+		IconSize = UDim2.fromOffset(16, 16),
+		ConfirmAction = false,
+		ConfirmText = "Are you sure?",
+		Keybind = nil,
+		RichText = false
+	}
+
+	function Element:New(Config)
+		-- Merge with defaults
+		Config = Config or {}
+		for key, value in pairs(DefaultConfig) do
+			if Config[key] == nil then
+				Config[key] = value
+			end
+		end
+
+		-- Validation
+		assert(type(Config.Title) == "string", "Button - Title must be a string")
+		assert(type(Config.Callback) == "function", "Button - Callback must be a function")
+
+		local self = setmetatable({}, Element)
+		self.Config = Config
+		self.Disabled = Config.Disabled
+		self.OriginalCallback = Config.Callback
+
+		-- Create main frame
+		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
+		self.Frame = ButtonFrame.Frame
+		self.ButtonFrame = ButtonFrame
+
+		-- Create icon
+		self.Icon = New("ImageLabel", {
+			Image = Config.Icon,
+			Size = Config.IconSize,
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			BackgroundTransparency = 1,
+			Parent = ButtonFrame.Frame,
+			ThemeTag = {
+				ImageColor3 = self.Disabled and "TextDisabled" or "Text",
+			},
+		})
+
+		-- Add hover effects
+		self:SetupHoverEffects()
+
+		-- Add click handler
+		self.ClickConnection = Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
+			self:OnClick()
+		end)
+
+		-- Add keybind support
+		if Config.Keybind then
+			self:SetKeybind(Config.Keybind)
+		end
+
+		-- Apply initial state
+		self:UpdateState()
+
+		return self
+	end
+
+	function Element:SetupHoverEffects()
+		if self.Disabled then return end
+
+		local frame = self.Frame
+		local originalTransparency = frame.BackgroundTransparency
+
+		Creator.AddSignal(frame.MouseEnter, function()
+			if not self.Disabled then
+				Library:Tween(frame, 0.2, {BackgroundTransparency = originalTransparency - 0.1})
+				Library:Tween(self.Icon, 0.2, {ImageTransparency = 0.2})
+			end
+		end)
+
+		Creator.AddSignal(frame.MouseLeave, function()
+			if not self.Disabled then
+				Library:Tween(frame, 0.2, {BackgroundTransparency = originalTransparency})
+				Library:Tween(self.Icon, 0.2, {ImageTransparency = 0})
+			end
+		end)
+	end
+
+	function Element:OnClick()
+		if self.Disabled then return end
+
+		-- Visual feedback
+		self:AnimateClick()
+
+		-- Confirmation dialog
+		if self.Config.ConfirmAction then
+			self:ShowConfirmation()
+		else
+			self:ExecuteCallback()
+		end
+	end
+
+	function Element:AnimateClick()
+		local frame = self.Frame
+		local icon = self.Icon
+		
+		-- Quick scale animation
+		Library:Tween(frame, 0.1, {
+			Size = frame.Size - UDim2.fromOffset(2, 2)
+		})
+		
+		Library:Tween(icon, 0.1, {
+			Size = icon.Size - UDim2.fromOffset(2, 2)
+		})
+
+		wait(0.1)
+
+		Library:Tween(frame, 0.1, {
+			Size = frame.Size + UDim2.fromOffset(2, 2)
+		})
+		
+		Library:Tween(icon, 0.1, {
+			Size = icon.Size + UDim2.fromOffset(2, 2)
+		})
+	end
+
+	function Element:ShowConfirmation()
+		-- Create confirmation dialog
+		local confirmFrame = New("Frame", {
+			Size = UDim2.new(0, 200, 0, 80),
+			Position = UDim2.new(0.5, -100, 0.5, -40),
+			BackgroundColor3 = Color3.new(0.1, 0.1, 0.1),
+			BorderSizePixel = 1,
+			BorderColor3 = Color3.new(0.3, 0.3, 0.3),
+			Parent = Library.ScreenGui,
+			ZIndex = 1000
+		})
+
+		local confirmText = New("TextLabel", {
+			Size = UDim2.new(1, -20, 0, 30),
+			Position = UDim2.new(0, 10, 0, 10),
+			BackgroundTransparency = 1,
+			Text = self.Config.ConfirmText,
+			TextColor3 = Color3.new(1, 1, 1),
+			TextScaled = true,
+			Parent = confirmFrame
+		})
+
+		local yesButton = New("TextButton", {
+			Size = UDim2.new(0, 60, 0, 25),
+			Position = UDim2.new(0, 30, 1, -35),
+			BackgroundColor3 = Color3.new(0.2, 0.6, 0.2),
+			Text = "Yes",
+			TextColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0,
+			Parent = confirmFrame
+		})
+
+		local noButton = New("TextButton", {
+			Size = UDim2.new(0, 60, 0, 25),
+			Position = UDim2.new(1, -90, 1, -35),
+			BackgroundColor3 = Color3.new(0.6, 0.2, 0.2),
+			Text = "No",
+			TextColor3 = Color3.new(1, 1, 1),
+			BorderSizePixel = 0,
+			Parent = confirmFrame
+		})
+
+		Creator.AddSignal(yesButton.MouseButton1Click, function()
+			confirmFrame:Destroy()
+			self:ExecuteCallback()
+		end)
+
+		Creator.AddSignal(noButton.MouseButton1Click, function()
+			confirmFrame:Destroy()
+		end)
+	end
+
+	function Element:ExecuteCallback()
+		Library:SafeCallback(self.OriginalCallback)
+	end
+
+	function Element:SetTitle(newTitle)
+		assert(type(newTitle) == "string", "Title must be a string")
+		self.Config.Title = newTitle
+		self.ButtonFrame.Title.Text = newTitle
+	end
+
+	function Element:SetDescription(newDescription)
+		self.Config.Description = newDescription
+		if self.ButtonFrame.Description then
+			self.ButtonFrame.Description.Text = newDescription or ""
+			self.ButtonFrame.Description.Visible = newDescription ~= nil
+		end
+	end
+
+	function Element:SetIcon(newIcon)
+		self.Config.Icon = newIcon
+		self.Icon.Image = newIcon
+	end
+
+	function Element:SetCallback(newCallback)
+		assert(type(newCallback) == "function", "Callback must be a function")
+		self.OriginalCallback = newCallback
+	end
+
+	function Element:SetDisabled(disabled)
+		self.Disabled = disabled
+		self:UpdateState()
+	end
+
+	function Element:SetKeybind(keycode)
+		if self.KeybindConnection then
+			self.KeybindConnection:Disconnect()
+		end
+
+		if keycode then
+			self.KeybindConnection = Creator.AddSignal(game:GetService("UserInputService").InputBegan, function(input, gameProcessed)
+				if gameProcessed then return end
+				if input.KeyCode == keycode then
+					self:OnClick()
+				end
+			end)
+		end
+	end
+
+	function Element:UpdateState()
+		local transparency = self.Disabled and 0.5 or 0
+		local textColor = self.Disabled and "TextDisabled" or "Text"
+
+		self.Frame.BackgroundTransparency = transparency
+		self.Icon.ImageTransparency = transparency
+		
+		if self.ButtonFrame.Title then
+			self.ButtonFrame.Title.TextTransparency = transparency
+		end
+
+		-- Update theme tags
+		self.Icon.ThemeTag.ImageColor3 = textColor
+		
+		-- Remove hover effects if disabled
+		if self.Disabled then
+			self.Frame.BackgroundTransparency = 0.5
+		end
+	end
+
+	function Element:Toggle()
+		self:SetDisabled(not self.Disabled)
+	end
+
+	function Element:Click()
+		self:OnClick()
+	end
+
+	function Element:Destroy()
+		if self.ClickConnection then
+			self.ClickConnection:Disconnect()
+		end
+		if self.KeybindConnection then
+			self.KeybindConnection:Disconnect()
+		end
+		if self.ButtonFrame.Frame then
+			self.ButtonFrame.Frame:Destroy()
+		end
 	end
 
 	return Element
