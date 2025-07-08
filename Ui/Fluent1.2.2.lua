@@ -2080,6 +2080,7 @@ Components.Element = (function()
 		return Element
 	end
 end)()
+--[[
 Components.Section = (function()
 	local New = Creator.New
 
@@ -2162,6 +2163,236 @@ Components.Section = (function()
 		return Section
 	end
 end)()
+]]
+Components.Section = (function()
+	local New = Creator.New
+	local Spring = Flipper.Spring.new
+
+	return function(Title, Parent, Icon)
+		local Section = {}
+
+		Section.Layout = New("UIListLayout", {
+			Padding = UDim.new(0, 8),
+		})
+
+		Section.Container = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 30),
+			Position = UDim2.fromOffset(0, 32),
+			BackgroundTransparency = 1,
+		}, {
+			Section.Layout,
+		})
+
+		-- Divider line ใต้หัวข้อ
+		local Divider = New("Frame", {
+			Size = UDim2.new(1, -20, 0, 1),
+			Position = UDim2.fromOffset(10, 28),
+			BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+			BorderSizePixel = 0,
+			ThemeTag = {
+				BackgroundColor3 = "SectionDivider",
+			},
+		}, {
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 80, 80)),
+					ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 120, 120)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 80, 80))
+				},
+				Rotation = 0,
+			}),
+		})
+
+		-- Glow effect สำหรับ divider
+		local DividerGlow = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 3),
+			Position = UDim2.fromOffset(0, -1),
+			BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+			BackgroundTransparency = 0.8,
+			BorderSizePixel = 0,
+			Parent = Divider,
+		}, {
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 150, 255)),
+					ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 200, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 150, 255))
+				},
+				Transparency = NumberSequence.new{
+					NumberSequenceKeypoint.new(0, 1),
+					NumberSequenceKeypoint.new(0.5, 0.6),
+					NumberSequenceKeypoint.new(1, 1)
+				},
+			}),
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 1),
+			}),
+		})
+
+		-- Header container with better styling
+		local SectionHeader = New("Frame", {
+			Size = UDim2.new(1, -16, 0, 22),
+			Position = UDim2.fromOffset(8, 4),
+			BackgroundTransparency = 1,
+		}, {
+			New("UIListLayout", {
+				Padding = UDim.new(0, 8),
+				FillDirection = Enum.FillDirection.Horizontal,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+			}),
+			Icon and New("ImageLabel", {
+				Image = Icon,
+				Size = UDim2.fromOffset(18, 18),
+				BackgroundTransparency = 1,
+				LayoutOrder = 1,
+				ImageColor3 = Color3.fromRGB(200, 200, 200),
+				ThemeTag = {
+					ImageColor3 = "AccentColor",
+				},
+			}) or nil,
+			New("TextLabel", {
+				RichText = true,
+				Text = Title,
+				TextTransparency = 0,
+				FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+				TextSize = 16,
+				TextXAlignment = "Left",
+				TextYAlignment = "Center",
+				Size = UDim2.fromScale(0, 1),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundTransparency = 1,
+				LayoutOrder = 2,
+				TextColor3 = Color3.fromRGB(220, 220, 220),
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			}),
+			-- Decorative accent bar
+			New("Frame", {
+				Size = UDim2.fromOffset(3, 16),
+				BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+				BorderSizePixel = 0,
+				LayoutOrder = 0,
+				ThemeTag = {
+					BackgroundColor3 = "AccentColor",
+				},
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 2),
+				}),
+				New("UIGradient", {
+					Color = ColorSequence.new{
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 150, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 200, 255))
+					},
+					Rotation = 90,
+				}),
+			}),
+		})
+
+		-- Background subtle effect
+		local BackgroundEffect = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 30),
+			Position = UDim2.fromOffset(0, 0),
+			BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+			BackgroundTransparency = 0.95,
+			BorderSizePixel = 0,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+				},
+				Rotation = 90,
+			}),
+		})
+
+		Section.Root = New("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 32),
+			LayoutOrder = 7,
+			Parent = Parent,
+		}, {
+			BackgroundEffect,
+			SectionHeader,
+			Divider,
+			Section.Container,
+		})
+
+		-- Smooth animation for content size changes
+		local SizeSpring = Spring(32, {
+			frequency = 4,
+			dampingRatio = 0.8
+		})
+
+		Creator.AddSignal(Section.Layout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+			local newContainerSize = math.max(Section.Layout.AbsoluteContentSize.Y, 8)
+			local newRootSize = newContainerSize + 40
+			
+			Section.Container.Size = UDim2.new(1, 0, 0, newContainerSize)
+			
+			-- Animate root size change
+			SizeSpring:setGoal(newRootSize)
+		end)
+
+		Creator.AddSignal(SizeSpring.Changed, function(value)
+			Section.Root.Size = UDim2.new(1, 0, 0, value)
+			BackgroundEffect.Size = UDim2.new(1, 0, 0, math.min(value, 35))
+		end)
+
+		-- Hover effect for the section
+		local HoverSpring = Spring(0.95, {
+			frequency = 6,
+			dampingRatio = 0.7
+		})
+
+		Creator.AddSignal(Section.Root.MouseEnter, function()
+			HoverSpring:setGoal(0.9)
+		end)
+
+		Creator.AddSignal(Section.Root.MouseLeave, function()
+			HoverSpring:setGoal(0.95)
+		end)
+
+		Creator.AddSignal(HoverSpring.Changed, function(value)
+			BackgroundEffect.BackgroundTransparency = value
+		end)
+
+		-- Enhanced spacing and padding
+		Section.Container.Position = UDim2.fromOffset(0, 38)
+
+		-- Register with Library
+		if Library.Windows and #Library.Windows > 0 then
+			local currentWindow = Library.Windows[#Library.Windows]
+			if currentWindow and currentWindow.RegisterElement then
+				currentWindow.RegisterElement(Section.Root, Title, "Section")
+			end
+		end
+
+		-- Add utility functions
+		function Section:SetTitle(newTitle)
+			SectionHeader:FindFirstChild("TextLabel").Text = newTitle
+		end
+
+		function Section:SetIcon(newIcon)
+			local iconLabel = SectionHeader:FindFirstChild("ImageLabel")
+			if iconLabel then
+				iconLabel.Image = newIcon
+			end
+		end
+
+		function Section:SetVisible(visible)
+			Section.Root.Visible = visible
+		end
+
+		return Section
+	end
+end)()
+--[[
 Components.Tab = (function()
 	local New = Creator.New
 	local Spring = Flipper.Spring.new
@@ -2373,6 +2604,358 @@ Components.Tab = (function()
 
 	return TabModule
 end)()
+]]
+Components.Tab = (function()
+	local New = Creator.New
+	local Spring = Flipper.Spring.new
+	local Instant = Flipper.Instant.new
+	local Components = Components
+
+	local TabModule = {
+		Window = nil,
+		Tabs = {},
+		Containers = {},
+		SelectedTab = 0,
+		TabCount = 0,
+	}
+
+	function TabModule:Init(Window)
+		TabModule.Window = Window
+		return TabModule
+	end
+
+	function TabModule:GetCurrentTabPos()
+		local TabHolderPos = TabModule.Window.TabHolder.AbsolutePosition.Y
+		local TabPos = TabModule.Tabs[TabModule.SelectedTab].Frame.AbsolutePosition.Y
+
+		return TabPos - TabHolderPos
+	end
+
+	function TabModule:New(Title, Icon, Parent)
+		local Window = TabModule.Window
+		local Elements = Library.Elements
+
+		TabModule.TabCount = TabModule.TabCount + 1
+		local TabIndex = TabModule.TabCount
+
+		local Tab = {
+			Selected = false,
+			Name = Title,
+			Type = "Tab",
+		}
+
+		if not fischbypass then 
+			if Library:GetIcon(Icon) then
+				Icon = Library:GetIcon(Icon)
+			end
+
+			if Icon == "" or nil then
+				Icon = nil
+			end
+		end
+
+		-- Selection indicator
+		local SelectionIndicator = New("Frame", {
+			Size = UDim2.new(0, 3, 0, 20),
+			Position = UDim2.new(0, 0, 0.5, -10),
+			BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+			BorderSizePixel = 0,
+			BackgroundTransparency = 1,
+			ThemeTag = {
+				BackgroundColor3 = "AccentColor",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 2),
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 150, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 200, 255))
+				},
+				Rotation = 90,
+			}),
+		})
+
+		-- Hover glow effect
+		local HoverGlow = New("Frame", {
+			Size = UDim2.new(1, 4, 1, 4),
+			Position = UDim2.new(0, -2, 0, -2),
+			BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ThemeTag = {
+				BackgroundColor3 = "AccentColor",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 8),
+			}),
+		})
+		
+		Tab.Frame = New("TextButton", {
+			Size = UDim2.new(1, 0, 0, 38),
+			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+			Parent = Parent,
+			ThemeTag = {
+				BackgroundColor3 = "Tab",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			-- Background gradient
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
+				},
+				Rotation = 90,
+			}),
+			HoverGlow,
+			SelectionIndicator,
+			New("TextLabel", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = not fischbypass and Icon and UDim2.new(0, 34, 0.5, 0) or UDim2.new(0, 16, 0.5, 0),
+				Text = Title,
+				RichText = true,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextTransparency = 0,
+				FontFace = Font.new(
+					"rbxasset://fonts/families/GothamSSm.json",
+					Enum.FontWeight.Medium,
+					Enum.FontStyle.Normal
+				),
+				TextSize = 13,
+				TextXAlignment = "Left",
+				TextYAlignment = "Center",
+				Size = UDim2.new(1, -16, 1, 0),
+				BackgroundTransparency = 1,
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			}),
+			New("ImageLabel", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.fromOffset(18, 18),
+				Position = UDim2.new(0, 10, 0.5, 0),
+				BackgroundTransparency = 1,
+				Image = Icon and Icon or nil,
+				ImageColor3 = Color3.fromRGB(180, 180, 180),
+				ThemeTag = {
+					ImageColor3 = "Text",
+				},
+			}),
+		})
+
+		local ContainerLayout = New("UIListLayout", {
+			Padding = UDim.new(0, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		})
+
+		Tab.ContainerFrame = New("ScrollingFrame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Parent = Window.ContainerHolder,
+			Visible = false,
+			BottomImage = "rbxassetid://6889812791",
+			MidImage = "rbxassetid://6889812721",
+			TopImage = "rbxassetid://6276641225",
+			ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120),
+			ScrollBarImageTransparency = 0.9,
+			ScrollBarThickness = 4,
+			BorderSizePixel = 0,
+			CanvasSize = UDim2.fromScale(0, 0),
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+		}, {
+			ContainerLayout,
+			New("UIPadding", {
+				PaddingRight = UDim.new(0, 12),
+				PaddingLeft = UDim.new(0, 2),
+				PaddingTop = UDim.new(0, 2),
+				PaddingBottom = UDim.new(0, 2),
+			}),
+		})
+		
+
+		Creator.AddSignal(ContainerLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+			Tab.ContainerFrame.CanvasSize = UDim2.new(0, 0, 0, ContainerLayout.AbsoluteContentSize.Y + 4)
+		end)
+
+		-- Enhanced animation motors
+		Tab.Motor, Tab.SetTransparency = Creator.SpringMotor(1, Tab.Frame, "BackgroundTransparency")
+		Tab.GlowMotor, Tab.SetGlowTransparency = Creator.SpringMotor(1, HoverGlow, "BackgroundTransparency")
+		Tab.IndicatorMotor, Tab.SetIndicatorTransparency = Creator.SpringMotor(1, SelectionIndicator, "BackgroundTransparency")
+
+		-- Enhanced hover and selection effects
+		Creator.AddSignal(Tab.Frame.MouseEnter, function()
+			Tab.SetTransparency(Tab.Selected and 0.8 or 0.85)
+			Tab.SetGlowTransparency(Tab.Selected and 0.85 or 0.9)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseLeave, function()
+			Tab.SetTransparency(Tab.Selected and 0.85 or 1)
+			Tab.SetGlowTransparency(1)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Down, function()
+			Tab.SetTransparency(0.75)
+			Tab.SetGlowTransparency(0.8)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Up, function()
+			Tab.SetTransparency(Tab.Selected and 0.8 or 0.85)
+			Tab.SetGlowTransparency(Tab.Selected and 0.85 or 0.9)
+		end)
+		
+		Creator.AddSignal(Tab.Frame.MouseButton1Click, function()
+			TabModule:SelectTab(TabIndex)
+		end)
+
+		TabModule.Containers[TabIndex] = Tab.ContainerFrame
+		TabModule.Tabs[TabIndex] = Tab
+
+		Tab.Container = Tab.ContainerFrame
+		Tab.ScrollFrame = Tab.Container
+
+		-- Store references for selection indicator
+		Tab.SelectionIndicator = SelectionIndicator
+		Tab.HoverGlow = HoverGlow
+
+		function Tab:AddSection(SectionTitle, SectionIcon)
+			local Section = { Type = "Section" }
+
+			local Icon = SectionIcon
+			if not fischbypass then 
+				if Library:GetIcon(Icon) then
+					Icon = Library:GetIcon(Icon)
+				end
+
+				if Icon == "" or nil then
+					Icon = nil
+				end
+			end
+
+			local SectionFrame = Components.Section(SectionTitle, Tab.Container, Icon)
+			Section.Container = SectionFrame.Container
+			Section.ScrollFrame = Tab.Container
+
+			setmetatable(Section, Elements)
+			return Section
+		end
+
+		-- Additional utility functions
+		function Tab:SetTitle(newTitle)
+			Tab.Name = newTitle
+			Tab.Frame:FindFirstChild("TextLabel").Text = newTitle
+		end
+
+		function Tab:SetIcon(newIcon)
+			local iconLabel = Tab.Frame:FindFirstChild("ImageLabel")
+			if iconLabel then
+				iconLabel.Image = newIcon
+			end
+		end
+
+		function Tab:SetVisible(visible)
+			Tab.Frame.Visible = visible
+		end
+
+		setmetatable(Tab, Elements)
+		return Tab
+	end
+
+	function TabModule:SelectTab(Tab)
+		local Window = TabModule.Window
+
+		TabModule.SelectedTab = Tab
+
+		-- Enhanced selection animation
+		for Index, TabObject in next, TabModule.Tabs do
+			TabObject.SetTransparency(1)
+			TabObject.SetGlowTransparency(1)
+			TabObject.SetIndicatorTransparency(1)
+			TabObject.Selected = false
+			
+			-- Reset text color for unselected tabs
+			local textLabel = TabObject.Frame:FindFirstChild("TextLabel")
+			if textLabel then
+				textLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+			end
+			
+			-- Reset icon color for unselected tabs
+			local iconLabel = TabObject.Frame:FindFirstChild("ImageLabel")
+			if iconLabel then
+				iconLabel.ImageColor3 = Color3.fromRGB(180, 180, 180)
+			end
+		end
+
+		-- Set selected tab styling
+		TabModule.Tabs[Tab].SetTransparency(0.85)
+		TabModule.Tabs[Tab].SetIndicatorTransparency(0)
+		TabModule.Tabs[Tab].Selected = true
+
+		-- Enhanced selected tab styling
+		local selectedTextLabel = TabModule.Tabs[Tab].Frame:FindFirstChild("TextLabel")
+		if selectedTextLabel then
+			selectedTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		end
+
+		local selectedIconLabel = TabModule.Tabs[Tab].Frame:FindFirstChild("ImageLabel")
+		if selectedIconLabel then
+			selectedIconLabel.ImageColor3 = Color3.fromRGB(100, 150, 255)
+		end
+
+		Window.TabDisplay.Text = TabModule.Tabs[Tab].Name
+		Window.SelectorPosMotor:setGoal(Spring(TabModule:GetCurrentTabPos(), { frequency = 6 }))
+
+		-- Enhanced container transition
+		task.spawn(function()
+			Window.ContainerHolder.Parent = Window.ContainerAnim
+
+			Window.ContainerPosMotor:setGoal(Spring(20, { frequency = 12 }))
+			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 12 }))
+			task.wait(0.1)
+			
+			for _, Container in next, TabModule.Containers do
+				Container.Visible = false
+			end
+			TabModule.Containers[Tab].Visible = true
+			
+			Window.ContainerPosMotor:setGoal(Spring(0, { frequency = 8 }))
+			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 10 }))
+			task.wait(0.1)
+			
+			Window.ContainerHolder.Parent = Window.ContainerCanvas
+		end)
+	end
+
+	-- Additional utility functions for the module
+	function TabModule:GetSelectedTab()
+		return TabModule.SelectedTab
+	end
+
+	function TabModule:GetTabCount()
+		return TabModule.TabCount
+	end
+
+	function TabModule:GetTabByIndex(index)
+		return TabModule.Tabs[index]
+	end
+
+	function TabModule:GetTabByName(name)
+		for _, tab in pairs(TabModule.Tabs) do
+			if tab.Name == name then
+				return tab
+			end
+		end
+		return nil
+	end
+
+	return TabModule
+end)()
+
 Components.Button = (function()
 	local New = Creator.New
 
