@@ -4575,11 +4575,9 @@ ElementsTable.Dropdown = (function()
 			SearchBox,
 		})
 
-		-- Animation motors สำหรับ Search Container
 		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
 
-		-- Hover effects สำหรับ Search Container
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
 			SetSearchTransparency(0.05)
 			SetSearchStrokeTransparency(0.4)
@@ -4592,7 +4590,6 @@ ElementsTable.Dropdown = (function()
 			end
 		end)
 
-		-- Focus effects สำหรับ SearchBox
 		Creator.AddSignal(SearchBox.Focused, function()
 			SetSearchTransparency(0.02)
 			SetSearchStrokeTransparency(0.3)
@@ -4644,25 +4641,6 @@ ElementsTable.Dropdown = (function()
 					Color = "DropdownBorder",
 				},
 			})
-			--[[
-			New("UIGradient", {
-				Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 48, 48)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 40))
-				},
-				Rotation = 90,
-			}),
-			New("ImageLabel", {
-				BackgroundTransparency = 1,
-				Image = "http://www.roblox.com/asset/?id=5554236805",
-				ScaleType = Enum.ScaleType.Slice,
-				SliceCenter = Rect.new(23, 23, 277, 277),
-				Size = UDim2.fromScale(1, 1) + UDim2.fromOffset(30, 30),
-				Position = UDim2.fromOffset(-15, -15),
-				ImageColor3 = Color3.fromRGB(0, 0, 0),
-				ImageTransparency = 0.05,
-			}),
-			]]
 		})
 
 		local DropdownHolderCanvas = New("Frame", {
@@ -4799,13 +4777,13 @@ ElementsTable.Dropdown = (function()
 			
 			openTween:Play()
 			iconTween:Play()
-			
-			-- Auto-focus ที่ search box ทันทีเมื่อเปิด dropdown
+			--[[
 			if Dropdown.Searchable then
 				openTween.Completed:Connect(function()
 					SearchBox:CaptureFocus()
 				end)
 			end
+			]]
 		end
 
 		function Dropdown:Close()
