@@ -3567,6 +3567,7 @@ Components.TitleBar = (function()
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					BackgroundTransparency = 1,
 					Name = "Logo",
+					ZIndex = 3
 					ScaleType = Enum.ScaleType.Fit,
 					ThemeTag = {
 						ImageColor3 = "Text",
@@ -3679,7 +3680,7 @@ Components.TitleBar = (function()
 				BackgroundTransparency = 1,
 				Text = "",
 				Parent = TitleBar.Frame.LogoContainer,
-				ZIndex = 2,
+				ZIndex = 4,
 			})
 			
 			AddSignal(LogoButton.MouseButton1Click, Config.LogoCallback)
