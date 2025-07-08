@@ -6820,6 +6820,7 @@ local MinimizeButton = New("TextButton", {
 
 local Minimizer
 
+--[[
 if Mobile then
 	Minimizer = New("Frame", {
 		Parent = GUI,
@@ -6864,6 +6865,7 @@ else
 		})
 	})
 end
+]]
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
