@@ -6876,8 +6876,7 @@ return function(property, bindableEvent)
 												BackgroundTransparency = 1,
 												--
 												Visible = false,
-                                                Active = false,
-                                                AutoButtonColor = false,
+                                                ZIndex = -1, -- ซ่อนไว้ลึกสุด
                                                 --
 												Image = computed(function()
 													return get(isCollapsed) and icons.minimize or icons.maximize
