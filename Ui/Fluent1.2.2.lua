@@ -3323,6 +3323,7 @@ Components.Textbox = (function()
 	end
 end)()
 
+--[[
 Components.TitleBar = (function()
 	local New = Creator.New
 	local AddSignal = Creator.AddSignal
@@ -3472,14 +3473,275 @@ Components.TitleBar = (function()
 				},
 			})
 		end)
-        ---------
+        ----
 		TitleBar.MaxButton = BarButton(Components.Assets.Max, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
 			Config.Window.Maximize(not Config.Window.Maximized)
 		end)
 		TitleBar.MinButton = BarButton(Components.Assets.Min, UDim2.new(1, -80, 0, 4), TitleBar.Frame, function()
 			Library.Window:Minimize()
 		end)
-		---------
+		-----
+
+		return TitleBar
+	end
+end)()
+]]
+
+Components.TitleBar = (function()
+	local New = Creator.New
+	local AddSignal = Creator.AddSignal
+
+	return function(Config)
+		local TitleBar = {}
+
+		local function BarButton(Icon, Pos, Parent, Callback)
+			local Button = {
+				Callback = Callback or function() end,
+			}
+
+			Button.Frame = New("TextButton", {
+				Size = UDim2.new(0, 34, 1, -8),
+				AnchorPoint = Vector2.new(1, 0),
+				BackgroundTransparency = 1,
+				Parent = Parent,
+				Position = Pos,
+				Text = "",
+				ThemeTag = {
+					BackgroundColor3 = "Text",
+				},
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 8),
+				}),
+				New("ImageLabel", {
+					Image = Icon,
+					Size = UDim2.fromOffset(16, 16),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					Name = "Icon",
+					ThemeTag = {
+						ImageColor3 = "Text",
+					},
+				}),
+				-- Add subtle glow effect
+				New("ImageLabel", {
+					Image = Icon,
+					Size = UDim2.fromOffset(18, 18),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					ImageTransparency = 0.8,
+					Name = "Glow",
+					ZIndex = -1,
+					ThemeTag = {
+						ImageColor3 = "Text",
+					},
+				}),
+			})
+
+			local Motor, SetTransparency = Creator.SpringMotor(1, Button.Frame, "BackgroundTransparency")
+			local GlowMotor, SetGlowTransparency = Creator.SpringMotor(1, Button.Frame.Glow, "ImageTransparency")
+
+			AddSignal(Button.Frame.MouseEnter, function()
+				SetTransparency(0.92)
+				SetGlowTransparency(0.6)
+				-- Scale animation
+				Library:Tween(Button.Frame.Icon, 0.2, {
+					Size = UDim2.fromOffset(18, 18)
+				})
+			end)
+			
+			AddSignal(Button.Frame.MouseLeave, function()
+				SetTransparency(1, true)
+				SetGlowTransparency(1, true)
+				-- Scale back
+				Library:Tween(Button.Frame.Icon, 0.2, {
+					Size = UDim2.fromOffset(16, 16)
+				})
+			end)
+			
+			AddSignal(Button.Frame.MouseButton1Down, function()
+				SetTransparency(0.96)
+				-- Press animation
+				Library:Tween(Button.Frame.Icon, 0.1, {
+					Size = UDim2.fromOffset(15, 15)
+				})
+			end)
+			
+			AddSignal(Button.Frame.MouseButton1Up, function()
+				SetTransparency(0.92)
+				-- Release animation
+				Library:Tween(Button.Frame.Icon, 0.1, {
+					Size = UDim2.fromOffset(18, 18)
+				})
+			end)
+			
+			AddSignal(Button.Frame.MouseButton1Click, Button.Callback)
+
+			Button.SetCallback = function(Func)
+				Button.Callback = Func
+			end
+
+			return Button
+		end
+
+		TitleBar.Frame = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 42),
+			BackgroundTransparency = 1,
+			Parent = Config.Parent,
+		}, {
+			-- Add gradient background
+			New("Frame", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 0.98,
+				ZIndex = -1,
+				ThemeTag = {
+					BackgroundColor3 = "Text",
+				},
+			}, {
+				New("UIGradient", {
+					Transparency = NumberSequence.new({
+						NumberSequenceKeypoint.new(0, 0.98),
+						NumberSequenceKeypoint.new(1, 1)
+					}),
+					Rotation = 90,
+				}),
+			}),
+			
+			New("Frame", {
+				Size = UDim2.new(1, -16, 1, 0),
+				Position = UDim2.new(0, 16, 0, 0),
+				BackgroundTransparency = 1,
+			}, {
+				New("UIListLayout", {
+					Padding = UDim.new(0, 8),
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+				}),
+
+				-- Main Title with better styling
+				New("TextLabel", {
+					RichText = true,
+					Text = Config.Title,
+					FontFace = Font.new(
+						"rbxasset://fonts/families/GothamSSm.json",
+						Enum.FontWeight.Medium,
+						Enum.FontStyle.Normal
+					),
+					TextSize = 13,
+					TextXAlignment = "Left",
+					TextYAlignment = "Center",
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					LayoutOrder = 1,
+					ThemeTag = {
+						TextColor3 = "Text",
+					},
+				}),
+				
+				-- Subtitle with fade effect
+				Config.SubTitle and New("Frame", {
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					LayoutOrder = 2,
+				}, {
+					New("TextLabel", {
+						RichText = true,
+						Text = "• " .. Config.SubTitle,
+						FontFace = Font.new(
+							"rbxasset://fonts/families/GothamSSm.json",
+							Enum.FontWeight.Regular,
+							Enum.FontStyle.Normal
+						),
+						TextSize = 11,
+						TextXAlignment = "Left",
+						TextYAlignment = "Center",
+						Size = UDim2.fromScale(1, 1),
+						BackgroundTransparency = 1,
+						ThemeTag = {
+							TextColor3 = "Text",
+						},
+					}),
+					New("UIGradient", {
+						Transparency = NumberSequence.new({
+							NumberSequenceKeypoint.new(0, 0.3),
+							NumberSequenceKeypoint.new(1, 0.7)
+						}),
+						Rotation = 0,
+					}),
+				}) or nil,
+			}),
+			
+			-- Enhanced bottom line with gradient
+			New("Frame", {
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 1),
+				Position = UDim2.new(0, 0, 1, 0),
+			}, {
+				New("Frame", {
+					Size = UDim2.new(1, 0, 1, 0),
+					BackgroundTransparency = 0.3,
+					ThemeTag = {
+						BackgroundColor3 = "TitleBarLine",
+					},
+				}, {
+					New("UIGradient", {
+						Transparency = NumberSequence.new({
+							NumberSequenceKeypoint.new(0, 0.8),
+							NumberSequenceKeypoint.new(0.5, 0.3),
+							NumberSequenceKeypoint.new(1, 0.8)
+						}),
+					}),
+				}),
+			}),
+		})
+
+		-- Enhanced Close Button with better visual feedback
+		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
+			-- Add close button press effect
+			local closeFrame = TitleBar.CloseButton.Frame
+			Library:Tween(closeFrame, 0.1, {BackgroundTransparency = 0.8})
+			spawn(function()
+				wait(0.1)
+				Library:Tween(closeFrame, 0.1, {BackgroundTransparency = 1})
+			end)
+			
+			Library.Window:Dialog({
+				Title = "Close",
+				Content = "Are you sure you want to unload the interface?",
+				Buttons = {
+					{
+						Title = "Yes",
+						Callback = function()
+							Library:Destroy()
+							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
+								game:GetService("CoreGui").BONKHUBMODILE:Destroy()
+							end
+						end,
+					},
+					{
+						Title = "No",
+					},
+				},
+			})
+		end)
+
+		-- Add breathing animation to title
+		spawn(function()
+			local titleLabel = TitleBar.Frame:FindFirstChild("Frame"):FindFirstChild("TextLabel")
+			if titleLabel then
+				while titleLabel.Parent do
+					Library:Tween(titleLabel, 2, {TextTransparency = 0.1})
+					wait(2)
+					Library:Tween(titleLabel, 2, {TextTransparency = 0})
+					wait(2)
+				end
+			end
+		end)
 
 		return TitleBar
 	end
@@ -4639,7 +4901,6 @@ end)()
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
 
---[[
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4664,75 +4925,6 @@ ElementsTable.Button = (function()
 		})
 
 		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
-			Library:SafeCallback(Config.Callback)
-		end)
-
-		return ButtonFrame
-	end
-
-	return Element
-end)()
-
-]]
-ElementsTable.Button = (function()
-	local Element = {}
-	Element.__index = Element
-	Element.__type = "Button"
-
-	function Element:New(Config)
-		assert(Config.Title, "Button - Missing Title")
-		Config.Callback = Config.Callback or function() end
-
-		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
-
-		-- Create icon with better positioning
-		local ButtonIcon = New("ImageLabel", {
-			Image = "rbxassetid://10709791437",
-			Size = UDim2.fromOffset(16, 16),
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -12, 0.5, 0),
-			BackgroundTransparency = 1,
-			Parent = ButtonFrame.Frame,
-			ThemeTag = {
-				ImageColor3 = "Text",
-			},
-		})
-
-		-- Add subtle hover effect
-		local originalTransparency = ButtonFrame.Frame.BackgroundTransparency
-		
-		Creator.AddSignal(ButtonFrame.Frame.MouseEnter, function()
-			Library:Tween(ButtonFrame.Frame, 0.15, {
-				BackgroundTransparency = math.max(0, originalTransparency - 0.05)
-			})
-			Library:Tween(ButtonIcon, 0.15, {
-				ImageTransparency = 0.2
-			})
-		end)
-
-		Creator.AddSignal(ButtonFrame.Frame.MouseLeave, function()
-			Library:Tween(ButtonFrame.Frame, 0.15, {
-				BackgroundTransparency = originalTransparency
-			})
-			Library:Tween(ButtonIcon, 0.15, {
-				ImageTransparency = 0
-			})
-		end)
-
-		-- Add click animation
-		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
-			-- Quick scale feedback
-			Library:Tween(ButtonFrame.Frame, 0.08, {
-				Size = ButtonFrame.Frame.Size - UDim2.fromOffset(1, 1)
-			})
-			
-			spawn(function()
-				wait(0.08)
-				Library:Tween(ButtonFrame.Frame, 0.08, {
-					Size = ButtonFrame.Frame.Size + UDim2.fromOffset(1, 1)
-				})
-			end)
-
 			Library:SafeCallback(Config.Callback)
 		end)
 
