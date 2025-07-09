@@ -4709,23 +4709,21 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- แก้ปัญหาการเปิด/ปิด dropdown
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.Opened then
 				Dropdown:Close()
-			else
-				Dropdown:Open()
+				return
 			end
+			Dropdown:Open()
 		end)
 
-		-- แก้ปัญหาสำหรับ touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
 				if Dropdown.Opened then
 					Dropdown:Close()
-				else
-					Dropdown:Open()
+					return
 				end
+				Dropdown:Open()
 			end
 		end)
 
@@ -4736,48 +4734,30 @@ ElementsTable.Dropdown = (function()
 			end)
 		end
 
-		local clickOutsideConnection = nil
-		
-		local function setupClickOutsideHandler()
-			if clickOutsideConnection then
-				clickOutsideConnection:Disconnect()
-			end
-			
-			-- เพิ่ม delay เล็กน้อยเพื่อป้องกัน race condition
-			wait(0.1)
-			
-			clickOutsideConnection = UserInputService.InputBegan:Connect(function(Input)
-				if not Dropdown.Opened then return end
-				
-				if Input.UserInputType == Enum.UserInputType.MouseButton1 or 
-				   Input.UserInputType == Enum.UserInputType.Touch then
-					
-					local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
-					local DropdownInnerPos, DropdownInnerSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
-					
-					-- ตรวจสอบว่าคลิกนอก dropdown และนอกปุ่ม dropdown
-					local clickedOutsideDropdown = (Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or 
-													Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y)
-					
-					local clickedOutsideButton = (Mouse.X < DropdownInnerPos.X or Mouse.X > DropdownInnerPos.X + DropdownInnerSize.X or
-												 Mouse.Y < DropdownInnerPos.Y or Mouse.Y > DropdownInnerPos.Y + DropdownInnerSize.Y)
-					
-					if clickedOutsideDropdown and clickedOutsideButton then
-						Dropdown:Close()
-					end
+		Creator.AddSignal(UserInputService.InputBegan, function(Input)
+			if
+				Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
+				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
+				if
+					Mouse.X < AbsPos.X
+					or Mouse.X > AbsPos.X + AbsSize.X
+					or Mouse.Y < (AbsPos.Y - 20 - 1)
+					or Mouse.Y > AbsPos.Y + AbsSize.Y
+				then
+					Dropdown:Close()
 				end
-			end)
-		end
+			end
+		end)
 
 		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
-			if Dropdown.Opened then return end -- ป้องกันการเปิดซ้ำ
-			
 			Dropdown.Opened = true
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
 			
-			-- ล้าง search box เมื่อเปิด dropdown แต่ไม่ focus
+			-- ล้าง search box เมื่อเปิด dropdown
 			if Dropdown.Searchable then
 				SearchBox.Text = ""
 				FilterItems("")
@@ -4797,24 +4777,20 @@ ElementsTable.Dropdown = (function()
 			
 			openTween:Play()
 			iconTween:Play()
-			
-			-- ตั้งค่า click outside handler หลังจากเปิดแล้ว
-			setupClickOutsideHandler()
+			--[[
+			if Dropdown.Searchable then
+				openTween.Completed:Connect(function()
+					SearchBox:CaptureFocus()
+				end)
+			end
+			]]
 		end
 
 		function Dropdown:Close()
-			if not Dropdown.Opened then return end -- ป้องกันการปิดซ้ำ
-			
 			Dropdown.Opened = false
 			ScrollFrame.ScrollingEnabled = true
 			DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
 			DropdownHolderCanvas.Visible = false
-			
-			-- ปิด click outside handler
-			if clickOutsideConnection then
-				clickOutsideConnection:Disconnect()
-				clickOutsideConnection = nil
-			end
 			
 			local iconTween = TweenService:Create(
 				DropdownIco,
