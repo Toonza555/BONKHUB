@@ -4442,7 +4442,8 @@ ElementsTable.Dropdown = (function()
 			Opened = false,
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
-			Searchable = Config.Searchable or false
+			Searchable = Config.Searchable or false,
+			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4709,21 +4710,43 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
+		-- แก้ไข event handler สำหรับ MouseButton1Click
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
-			if Dropdown.Opened then
-				Dropdown:Close()
+			if Dropdown.IsToggling then
 				return
 			end
-			Dropdown:Open()
+			
+			Dropdown.IsToggling = true
+			
+			if Dropdown.Opened then
+				Dropdown:Close()
+			else
+				Dropdown:Open()
+			end
+			
+			-- รอสักครู่แล้วปลด flag
+			task.wait(0.1)
+			Dropdown.IsToggling = false
 		end)
 
+		-- แก้ไข event handler สำหรับ Touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				if Dropdown.Opened then
-					Dropdown:Close()
+				if Dropdown.IsToggling then
 					return
 				end
-				Dropdown:Open()
+				
+				Dropdown.IsToggling = true
+				
+				if Dropdown.Opened then
+					Dropdown:Close()
+				else
+					Dropdown:Open()
+				end
+				
+				-- รอสักครู่แล้วปลด flag
+				task.wait(0.1)
+				Dropdown.IsToggling = false
 			end
 		end)
 
@@ -4734,25 +4757,39 @@ ElementsTable.Dropdown = (function()
 			end)
 		end
 
+		-- แก้ไข event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
 			if
 				Input.UserInputType == Enum.UserInputType.MouseButton1
 				or Input.UserInputType == Enum.UserInputType.Touch
 			then
+				if not Dropdown.Opened then
+					return
+				end
+				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
+				
+				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
 				if
 					Mouse.X < AbsPos.X
 					or Mouse.X > AbsPos.X + AbsSize.X
 					or Mouse.Y < (AbsPos.Y - 20 - 1)
 					or Mouse.Y > AbsPos.Y + AbsSize.Y
 				then
-					Dropdown:Close()
+					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
+					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
+					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
+						   Mouse.Y >= ButtonAbsPos.Y and Mouse.Y <= ButtonAbsPos.Y + ButtonAbsSize.Y) then
+						Dropdown:Close()
+					end
 				end
 			end
 		end)
 
 		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
+			if Dropdown.Opened then return end
+			
 			Dropdown.Opened = true
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
@@ -4777,16 +4814,11 @@ ElementsTable.Dropdown = (function()
 			
 			openTween:Play()
 			iconTween:Play()
-			--[[
-			if Dropdown.Searchable then
-				openTween.Completed:Connect(function()
-					SearchBox:CaptureFocus()
-				end)
-			end
-			]]
 		end
 
 		function Dropdown:Close()
+			if not Dropdown.Opened then return end
+			
 			Dropdown.Opened = false
 			ScrollFrame.ScrollingEnabled = true
 			DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
