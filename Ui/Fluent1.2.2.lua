@@ -4709,21 +4709,23 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
+		-- แก้ปัญหาการเปิด/ปิด dropdown
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.Opened then
 				Dropdown:Close()
-				return
+			else
+				Dropdown:Open()
 			end
-			Dropdown:Open()
 		end)
 
+		-- แก้ปัญหาสำหรับ touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
 				if Dropdown.Opened then
 					Dropdown:Close()
-					return
+				else
+					Dropdown:Open()
 				end
-				Dropdown:Open()
 			end
 		end)
 
@@ -4739,25 +4741,31 @@ ElementsTable.Dropdown = (function()
 				Input.UserInputType == Enum.UserInputType.MouseButton1
 				or Input.UserInputType == Enum.UserInputType.Touch
 			then
-				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
-				if
-					Mouse.X < AbsPos.X
-					or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1)
-					or Mouse.Y > AbsPos.Y + AbsSize.Y
-				then
-					Dropdown:Close()
+				-- ตรวจสอบว่าคลิกภายใน dropdown หรือไม่
+				if Dropdown.Opened then
+					local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
+					local DropdownInnerPos, DropdownInnerSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
+					
+					-- ถ้าคลิกนอก dropdown และนอกปุ่ม dropdown ให้ปิด
+					if (Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or 
+						Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y) and
+					   (Mouse.X < DropdownInnerPos.X or Mouse.X > DropdownInnerPos.X + DropdownInnerSize.X or
+						Mouse.Y < DropdownInnerPos.Y or Mouse.Y > DropdownInnerPos.Y + DropdownInnerSize.Y) then
+						Dropdown:Close()
+					end
 				end
 			end
 		end)
 
 		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
+			if Dropdown.Opened then return end -- ป้องกันการเปิดซ้ำ
+			
 			Dropdown.Opened = true
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
 			
-			-- ล้าง search box เมื่อเปิด dropdown
+			-- ล้าง search box เมื่อเปิด dropdown แต่ไม่ focus
 			if Dropdown.Searchable then
 				SearchBox.Text = ""
 				FilterItems("")
@@ -4777,6 +4785,8 @@ ElementsTable.Dropdown = (function()
 			
 			openTween:Play()
 			iconTween:Play()
+			
+			-- เอาการ focus อัตโนมัติออก - ให้ผู้ใช้กดช่องค้นหาเอง
 			--[[
 			if Dropdown.Searchable then
 				openTween.Completed:Connect(function()
@@ -4787,6 +4797,8 @@ ElementsTable.Dropdown = (function()
 		end
 
 		function Dropdown:Close()
+			if not Dropdown.Opened then return end -- ป้องกันการปิดซ้ำ
+			
 			Dropdown.Opened = false
 			ScrollFrame.ScrollingEnabled = true
 			DropdownHolderFrame.Size = UDim2.fromScale(1, 0.6)
@@ -5102,8 +5114,6 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
-
-
 
 
 ElementsTable.Paragraph = (function()
