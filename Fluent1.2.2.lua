@@ -2614,7 +2614,7 @@ Components.Dialog = (function()
 
 	return Dialog
 end)()
-
+--[[
 Components.Notification = (function()
 	local Spring = Flipper.Spring.new
 	local Instant = Flipper.Instant.new
@@ -2854,7 +2854,489 @@ Components.Notification = (function()
 
 	return Notification
 end)()
+]]
+Components.Notification = (function()
+	local Spring = Flipper.Spring.new
+	local Instant = Flipper.Instant.new
+	local New = Creator.New
 
+	local Notification = {}
+
+	function Notification:Init(GUI)
+		Library.ActiveNotifications = Library.ActiveNotifications or {}
+
+		Notification.Holder = New("Frame", {
+			Position = UDim2.new(1, -30, 1, -30),
+			Size = UDim2.new(0, 340, 1, -30),
+			AnchorPoint = Vector2.new(1, 1),
+			BackgroundTransparency = 1,
+			Parent = GUI,
+		}, {
+			New("UIListLayout", {
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+				Padding = UDim.new(0, 16),
+			}),
+		})
+	end
+
+	function Notification:New(Config)
+		Config.Title = Config.Title or "Title"
+		Config.Content = Config.Content or "Content"
+		Config.SubContent = Config.SubContent or ""
+		Config.Duration = Config.Duration or nil
+		Config.Buttons = Config.Buttons or {}
+		Config.Icon = Config.Icon or nil
+		Config.Type = Config.Type or "Default" -- Default, Success, Warning, Error, Info
+		
+		local NewNotification = {
+			Closed = false,
+		}
+
+		-- Type-based colors and icons
+		local TypeConfig = {
+			Default = {
+				AccentColor = Color3.fromRGB(100, 150, 255),
+				IconColor = Color3.fromRGB(100, 150, 255),
+				Icon = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+			},
+			Success = {
+				AccentColor = Color3.fromRGB(34, 197, 94),
+				IconColor = Color3.fromRGB(34, 197, 94),
+				Icon = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- Checkmark icon
+			},
+			Warning = {
+				AccentColor = Color3.fromRGB(251, 191, 36),
+				IconColor = Color3.fromRGB(251, 191, 36),
+				Icon = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- Warning icon
+			},
+			Error = {
+				AccentColor = Color3.fromRGB(239, 68, 68),
+				IconColor = Color3.fromRGB(239, 68, 68),
+				Icon = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- Error icon
+			},
+			Info = {
+				AccentColor = Color3.fromRGB(59, 130, 246),
+				IconColor = Color3.fromRGB(59, 130, 246),
+				Icon = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- Info icon
+			}
+		}
+
+		local currentType = TypeConfig[Config.Type] or TypeConfig.Default
+
+		NewNotification.AcrylicPaint = Acrylic.AcrylicPaint()
+
+		-- Enhanced background with gradient and shadow
+		NewNotification.Background = New("Frame", {
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.fromScale(0, 0),
+			BackgroundColor3 = Color3.fromRGB(20, 20, 25),
+			BackgroundTransparency = 0.1,
+			ZIndex = 1,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 16),
+			}),
+			
+			-- Gradient overlay
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 50)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 35))
+				}),
+				Rotation = 135,
+			}),
+			
+			-- Border
+			New("UIStroke", {
+				Color = Color3.fromRGB(60, 60, 70),
+				Thickness = 1,
+				Transparency = 0.5,
+			}),
+		})
+
+		-- Drop shadow
+		NewNotification.Shadow = New("Frame", {
+			Size = UDim2.new(1, 12, 1, 12),
+			Position = UDim2.fromOffset(-6, -6),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BackgroundTransparency = 0.8,
+			ZIndex = 0,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 20),
+			}),
+		})
+
+		-- Accent line
+		NewNotification.AccentLine = New("Frame", {
+			Size = UDim2.new(0, 4, 1, 0),
+			Position = UDim2.fromScale(0, 0),
+			BackgroundColor3 = currentType.AccentColor,
+			BorderSizePixel = 0,
+			ZIndex = 3,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 2),
+			}),
+			
+			-- Glow effect
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, currentType.AccentColor),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(
+						math.min(255, currentType.AccentColor.R * 255 + 40),
+						math.min(255, currentType.AccentColor.G * 255 + 40),
+						math.min(255, currentType.AccentColor.B * 255 + 40)
+					))
+				}),
+				Rotation = 90,
+			}),
+		})
+
+		-- Icon
+		NewNotification.Icon = New("Frame", {
+			Size = UDim2.fromOffset(36, 36),
+			Position = UDim2.fromOffset(20, 16),
+			BackgroundColor3 = currentType.AccentColor,
+			BackgroundTransparency = 0.9,
+			ZIndex = 2,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 18),
+			}),
+			
+			New("ImageLabel", {
+				Image = Config.Icon or currentType.Icon,
+				Size = UDim2.fromOffset(20, 20),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				ImageColor3 = currentType.IconColor,
+				ZIndex = 3,
+			}),
+		})
+
+		-- Title with enhanced styling
+		NewNotification.Title = New("TextLabel", {
+			Position = UDim2.new(0, 68, 0, 16),
+			Text = Config.Title,
+			RichText = true,
+			TextColor3 = Color3.fromRGB(255, 255, 255),
+			TextTransparency = 0,
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+			TextSize = 14,
+			TextXAlignment = "Left",
+			TextYAlignment = "Top",
+			Size = UDim2.new(1, -110, 0, 16),
+			TextWrapped = true,
+			BackgroundTransparency = 1,
+			ZIndex = 2,
+			ThemeTag = {
+				TextColor3 = "Text",
+			},
+		})
+
+		-- Content with better spacing
+		NewNotification.ContentLabel = New("TextLabel", {
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			Text = Config.Content,
+			TextColor3 = Color3.fromRGB(200, 200, 200),
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Size = UDim2.new(1, 0, 0, 13),
+			BackgroundTransparency = 1,
+			TextWrapped = true,
+			ZIndex = 2,
+			ThemeTag = {
+				TextColor3 = "Text",
+			},
+		})
+
+		-- Sub content with muted color
+		NewNotification.SubContentLabel = New("TextLabel", {
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			Text = Config.SubContent,
+			TextColor3 = Color3.fromRGB(160, 160, 160),
+			TextTransparency = 0.3,
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top,
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Size = UDim2.new(1, 0, 0, 12),
+			BackgroundTransparency = 1,
+			TextWrapped = true,
+			ZIndex = 2,
+			ThemeTag = {
+				TextColor3 = "SubText",
+			},
+		})
+
+		-- Content container with better layout
+		NewNotification.LabelHolder = New("Frame", {
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(68, 36),
+			Size = UDim2.new(1, -110, 0, 0),
+			ZIndex = 2,
+		}, {
+			New("UIListLayout", {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
+				Padding = UDim.new(0, 6),
+			}),
+			NewNotification.ContentLabel,
+			NewNotification.SubContentLabel,
+		})
+
+		-- Enhanced close button
+		NewNotification.CloseButton = New("TextButton", {
+			Text = "",
+			Position = UDim2.new(1, -16, 0, 16),
+			Size = UDim2.fromOffset(24, 24),
+			AnchorPoint = Vector2.new(1, 0),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			ZIndex = 3,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 12),
+			}),
+			
+			New("ImageLabel", {
+				Image = Components.Close,
+				Size = UDim2.fromOffset(14, 14),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				ImageColor3 = Color3.fromRGB(160, 160, 160),
+				ZIndex = 4,
+				ThemeTag = {
+					ImageColor3 = "SubText",
+				},
+			}),
+		})
+
+		-- Progress bar for timed notifications
+		NewNotification.ProgressBar = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 2),
+			Position = UDim2.new(0, 0, 1, -2),
+			BackgroundColor3 = currentType.AccentColor,
+			BackgroundTransparency = 0.3,
+			BorderSizePixel = 0,
+			ZIndex = 2,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 1),
+			}),
+		})
+
+		-- Main notification container
+		NewNotification.Root = New("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.fromScale(1, 0),
+			ZIndex = 1,
+		}, {
+			NewNotification.Shadow,
+			NewNotification.AcrylicPaint.Frame,
+			NewNotification.Background,
+			NewNotification.AccentLine,
+			NewNotification.Icon,
+			NewNotification.Title,
+			NewNotification.CloseButton,
+			NewNotification.LabelHolder,
+			NewNotification.ProgressBar,
+		})
+
+		-- Hide empty content
+		if Config.Content == "" then
+			NewNotification.ContentLabel.Visible = false
+		end
+
+		if Config.SubContent == "" then
+			NewNotification.SubContentLabel.Visible = false
+		end
+
+		NewNotification.Holder = New("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 200),
+			Parent = Notification.Holder,
+		}, {
+			NewNotification.Root,
+		})
+
+		-- Enhanced animation system
+		local RootMotor = Flipper.GroupMotor.new({
+			Scale = 1,
+			Offset = 80,
+			Rotation = 5,
+			Transparency = 1,
+		})
+
+		RootMotor:onStep(function(Values)
+			NewNotification.Root.Position = UDim2.new(Values.Scale, Values.Offset, 0, 0)
+			NewNotification.Root.Rotation = Values.Rotation
+			NewNotification.Root.BackgroundTransparency = Values.Transparency
+		end)
+
+		-- Enhanced close button interactions
+		local CloseButtonMotor = Flipper.SingleMotor.new(0)
+		CloseButtonMotor:onStep(function(Value)
+			NewNotification.CloseButton.BackgroundTransparency = 1 - (Value * 0.1)
+			NewNotification.CloseButton.ImageLabel.ImageColor3 = Color3.fromRGB(
+				160 + (Value * 40),
+				160 + (Value * 40),
+				160 + (Value * 40)
+			)
+		end)
+
+		Creator.AddSignal(NewNotification.CloseButton.MouseEnter, function()
+			CloseButtonMotor:setGoal(Spring(1, { frequency = 8, dampingRatio = 0.7 }))
+		end)
+
+		Creator.AddSignal(NewNotification.CloseButton.MouseLeave, function()
+			CloseButtonMotor:setGoal(Spring(0, { frequency = 8, dampingRatio = 0.7 }))
+		end)
+
+		Creator.AddSignal(NewNotification.CloseButton.MouseButton1Click, function()
+			-- Add click animation
+			local ClickTween = TweenService:Create(
+				NewNotification.CloseButton,
+				TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Size = UDim2.fromOffset(20, 20) }
+			)
+			ClickTween:Play()
+			
+			ClickTween.Completed:Connect(function()
+				local ClickBackTween = TweenService:Create(
+					NewNotification.CloseButton,
+					TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{ Size = UDim2.fromOffset(24, 24) }
+				)
+				ClickBackTween:Play()
+			end)
+			
+			NewNotification:Close()
+		end)
+
+		function NewNotification:ApplyTransparency()
+			if Library.Theme == "Glass" and Library.UseAcrylic then
+				local Value = Library.NotificationTransparency or 1
+
+				local notifTransparency = 0.85 + (Value * 0.08)
+				if Value > 1 then
+					notifTransparency = 0.93 + ((Value - 1) * 0.04)
+				end
+
+				local notifBackgroundTransparency = 0.8 + (Value * 0.1)
+				if Value > 1 then
+					notifBackgroundTransparency = 0.9 + ((Value - 1) * 0.05)
+				end
+
+				if NewNotification.AcrylicPaint and NewNotification.AcrylicPaint.Model then
+					NewNotification.AcrylicPaint.Model.Transparency = math.min(notifTransparency, 0.97)
+				end
+				if NewNotification.AcrylicPaint and NewNotification.AcrylicPaint.Frame and NewNotification.AcrylicPaint.Frame.Background then
+					NewNotification.AcrylicPaint.Frame.Background.BackgroundTransparency = math.min(notifBackgroundTransparency, 0.95)
+				end
+			end
+		end
+
+		function NewNotification:Open()
+			local ContentSize = NewNotification.LabelHolder.AbsoluteSize.Y
+			NewNotification.Holder.Size = UDim2.new(1, 0, 0, math.max(80, 68 + ContentSize))
+
+			-- Enhanced entrance animation
+			RootMotor:setGoal({
+				Scale = Spring(0, { frequency = 4, dampingRatio = 0.8 }),
+				Offset = Spring(0, { frequency = 4, dampingRatio = 0.8 }),
+				Rotation = Spring(0, { frequency = 6, dampingRatio = 0.9 }),
+				Transparency = Spring(0, { frequency = 5, dampingRatio = 0.8 }),
+			})
+
+			-- Icon bounce animation
+			task.spawn(function()
+				task.wait(0.2)
+				local IconTween = TweenService:Create(
+					NewNotification.Icon,
+					TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+					{ Size = UDim2.fromOffset(40, 40) }
+				)
+				IconTween:Play()
+				
+				IconTween.Completed:Connect(function()
+					local IconBackTween = TweenService:Create(
+						NewNotification.Icon,
+						TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+						{ Size = UDim2.fromOffset(36, 36) }
+					)
+					IconBackTween:Play()
+				end)
+			end)
+
+			task.defer(function()
+				task.wait(0.1)
+				NewNotification:ApplyTransparency()
+			end)
+		end
+
+		function NewNotification:Close()
+			if not NewNotification.Closed then
+				NewNotification.Closed = true
+
+				for i, notif in pairs(Library.ActiveNotifications or {}) do
+					if notif == NewNotification then
+						table.remove(Library.ActiveNotifications, i)
+						break
+					end
+				end
+
+				task.spawn(function()
+					-- Enhanced exit animation
+					RootMotor:setGoal({
+						Scale = Spring(1, { frequency = 5, dampingRatio = 0.8 }),
+						Offset = Spring(100, { frequency = 5, dampingRatio = 0.8 }),
+						Rotation = Spring(-3, { frequency = 6, dampingRatio = 0.9 }),
+						Transparency = Spring(1, { frequency = 4, dampingRatio = 0.8 }),
+					})
+					
+					task.wait(0.5)
+					if Library.UseAcrylic then
+						NewNotification.AcrylicPaint.Model:Destroy()
+					end
+					NewNotification.Holder:Destroy()
+				end)
+			end
+		end
+
+		-- Progress bar animation for timed notifications
+		if Config.Duration then
+			local ProgressTween = TweenService:Create(
+				NewNotification.ProgressBar,
+				TweenInfo.new(Config.Duration, Enum.EasingStyle.Linear),
+				{ Size = UDim2.new(0, 0, 0, 2) }
+			)
+			ProgressTween:Play()
+		end
+
+		table.insert(Library.ActiveNotifications, NewNotification)
+
+		NewNotification:Open()
+		if Config.Duration then
+			task.delay(Config.Duration, function()
+				NewNotification:Close()
+			end)
+		end
+		
+		return NewNotification
+	end
+
+	return Notification
+end)()
 Components.Textbox = (function()
 	local New = Creator.New
 
@@ -4362,7 +4844,7 @@ ElementsTable.Button = (function()
 
 	return Element
 end)()
-
+--[[
 ElementsTable.Toggle = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4464,7 +4946,326 @@ ElementsTable.Toggle = (function()
 
 	return Element
 end)()
+]]
+ElementsTable.Toggle = (function()
+	local Element = {}
+	Element.__index = Element
+	Element.__type = "Toggle"
 
+	function Element:New(Idx, Config)
+		assert(Config.Title, "Toggle - Missing Title")
+
+		local Toggle = {
+			Value = Config.Default or false,
+			Callback = Config.Callback or function(Value) end,
+			Type = "Toggle",
+		}
+
+		local ToggleFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
+		ToggleFrame.DescLabel.Size = UDim2.new(1, -64, 0, 14)
+
+		Toggle.SetTitle = ToggleFrame.SetTitle
+		Toggle.SetDesc = ToggleFrame.SetDesc
+		Toggle.Visible = ToggleFrame.Visible
+		Toggle.Elements = ToggleFrame
+
+		-- Main Toggle Container
+		local ToggleSlider = New("Frame", {
+			Size = UDim2.fromOffset(48, 24),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Parent = ToggleFrame.Frame,
+			BackgroundTransparency = 1,
+			ThemeTag = {
+				BackgroundColor3 = "ToggleSlider",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 12),
+			}),
+			
+			-- Gradient Background
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(240, 240, 240))
+				}),
+				Rotation = 90,
+			}),
+			
+			-- Border/Outline
+			New("UIStroke", {
+				Thickness = 1.5,
+				Transparency = 0.3,
+				ThemeTag = {
+					Color = "ToggleSlider",
+				},
+			}),
+		})
+
+		-- Inner Shadow Effect
+		local InnerShadow = New("Frame", {
+			Size = UDim2.new(1, -4, 1, -4),
+			Position = UDim2.fromOffset(2, 2),
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BackgroundTransparency = 0.95,
+			Parent = ToggleSlider,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 10),
+			}),
+		})
+
+		-- Toggle Circle with enhanced design
+		local ToggleCircle = New("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.fromOffset(20, 20),
+			Position = UDim2.new(0, 2, 0.5, 0),
+			Parent = ToggleSlider,
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			ThemeTag = {
+				BackgroundColor3 = "ToggleSlider",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 10),
+			}),
+			
+			-- Circle Gradient
+			New("UIGradient", {
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 245, 245))
+				}),
+				Rotation = 135,
+			}),
+			
+			-- Circle Border
+			New("UIStroke", {
+				Thickness = 1,
+				Transparency = 0.7,
+				Color = Color3.fromRGB(200, 200, 200),
+			}),
+			
+			-- Circle Shadow
+			New("Frame", {
+				Size = UDim2.new(1, 2, 1, 2),
+				Position = UDim2.fromOffset(-1, -1),
+				BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+				BackgroundTransparency = 0.9,
+				ZIndex = -1,
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 11),
+				}),
+			}),
+		})
+
+		-- Glow Effect for active state
+		local GlowEffect = New("Frame", {
+			Size = UDim2.new(1, 8, 1, 8),
+			Position = UDim2.fromOffset(-4, -4),
+			BackgroundTransparency = 1,
+			Parent = ToggleSlider,
+			ZIndex = -1,
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 16),
+			}),
+			New("UIStroke", {
+				Thickness = 4,
+				Transparency = 1,
+				ThemeTag = {
+					Color = "Accent",
+				},
+			}),
+		})
+
+		-- Check mark icon for active state
+		local CheckMark = New("ImageLabel", {
+			Size = UDim2.fromOffset(12, 12),
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Image = "rbxasset://textures/ui/GuiImagePlaceholder.png", -- You can replace with checkmark icon
+			ImageTransparency = 1,
+			Parent = ToggleCircle,
+			ThemeTag = {
+				ImageColor3 = "Accent",
+			},
+		})
+
+		-- Ripple effect
+		local function CreateRipple()
+			local Ripple = New("Frame", {
+				Size = UDim2.fromOffset(0, 0),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 0.8,
+				Parent = ToggleSlider,
+				ThemeTag = {
+					BackgroundColor3 = "Accent",
+				},
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(1, 0),
+				}),
+			})
+
+			local RippleTween = TweenService:Create(
+				Ripple,
+				TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				{ 
+					Size = UDim2.fromOffset(60, 60),
+					BackgroundTransparency = 1
+				}
+			)
+
+			RippleTween:Play()
+			RippleTween.Completed:Connect(function()
+				Ripple:Destroy()
+			end)
+		end
+
+		function Toggle:OnChanged(Func)
+			Toggle.Changed = Func
+			Func(Toggle.Value)
+		end
+
+		function Toggle:SetValue(Value)
+			Value = not not Value
+			Toggle.Value = Value
+
+			-- Create ripple effect
+			CreateRipple()
+
+			-- Update colors and gradients
+			if Toggle.Value then
+				-- Active state
+				Creator.OverrideTag(ToggleSlider.UIStroke, { Color = "Accent" })
+				Creator.OverrideTag(ToggleSlider.UIGradient, { 
+					Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 200, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 150, 255))
+					})
+				})
+				Creator.OverrideTag(ToggleCircle, { BackgroundColor3 = "ToggleToggled" })
+				Creator.OverrideTag(ToggleCircle.UIGradient, { 
+					Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(240, 248, 255))
+					})
+				})
+			else
+				-- Inactive state
+				Creator.OverrideTag(ToggleSlider.UIStroke, { Color = "ToggleSlider" })
+				Creator.OverrideTag(ToggleSlider.UIGradient, { 
+					Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(240, 240, 240))
+					})
+				})
+				Creator.OverrideTag(ToggleCircle, { BackgroundColor3 = "ToggleSlider" })
+				Creator.OverrideTag(ToggleCircle.UIGradient, { 
+					Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 245, 245))
+					})
+				})
+			end
+
+			-- Animate circle position with bounce
+			local CircleTween = TweenService:Create(
+				ToggleCircle,
+				TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+				{ Position = UDim2.new(0, Toggle.Value and 26 or 2, 0.5, 0) }
+			)
+			CircleTween:Play()
+
+			-- Animate background
+			local BackgroundTween = TweenService:Create(
+				ToggleSlider,
+				TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ BackgroundTransparency = Toggle.Value and 0.2 or 1 }
+			)
+			BackgroundTween:Play()
+
+			-- Animate glow effect
+			local GlowTween = TweenService:Create(
+				GlowEffect.UIStroke,
+				TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ Transparency = Toggle.Value and 0.7 or 1 }
+			)
+			GlowTween:Play()
+
+			-- Animate check mark
+			local CheckTween = TweenService:Create(
+				CheckMark,
+				TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+				{ 
+					ImageTransparency = Toggle.Value and 0.3 or 1,
+					Size = Toggle.Value and UDim2.fromOffset(12, 12) or UDim2.fromOffset(8, 8)
+				}
+			)
+			CheckTween:Play()
+
+			-- Scale animation for extra polish
+			local ScaleTween = TweenService:Create(
+				ToggleSlider,
+				TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Size = UDim2.fromOffset(50, 26) }
+			)
+			ScaleTween:Play()
+
+			ScaleTween.Completed:Connect(function()
+				local ScaleBackTween = TweenService:Create(
+					ToggleSlider,
+					TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{ Size = UDim2.fromOffset(48, 24) }
+				)
+				ScaleBackTween:Play()
+			end)
+
+			Library:SafeCallback(Toggle.Callback, Toggle.Value)
+			Library:SafeCallback(Toggle.Changed, Toggle.Value)
+		end
+
+		function Toggle:Destroy()
+			ToggleFrame:Destroy()
+			Library.Options[Idx] = nil
+		end
+
+		-- Add hover effects
+		Creator.AddSignal(ToggleFrame.Frame.MouseEnter, function()
+			local HoverTween = TweenService:Create(
+				ToggleSlider,
+				TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ Size = UDim2.fromOffset(50, 26) }
+			)
+			HoverTween:Play()
+		end)
+
+		Creator.AddSignal(ToggleFrame.Frame.MouseLeave, function()
+			local HoverTween = TweenService:Create(
+				ToggleSlider,
+				TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				{ Size = UDim2.fromOffset(48, 24) }
+			)
+			HoverTween:Play()
+		end)
+
+		Creator.AddSignal(ToggleFrame.Frame.MouseButton1Click, function()
+			Toggle:SetValue(not Toggle.Value)
+		end)
+
+		Toggle:SetValue(Toggle.Value)
+
+		Library.Options[Idx] = Toggle
+		return Toggle
+	end
+
+	return Element
+end)()
 
 ElementsTable.Dropdown = (function()
 	local Element = {}
@@ -5198,6 +5999,7 @@ ElementsTable.Paragraph = (function()
 
 	return Paragraph
 end)()
+
 ElementsTable.Slider = (function()
 	local Element = {}
 	Element.__index = Element
@@ -5371,6 +6173,7 @@ ElementsTable.Slider = (function()
 
 	return Element
 end)()
+
 ElementsTable.Keybind = (function()
 	local Element = {}
 	Element.__index = Element
@@ -6077,6 +6880,8 @@ ElementsTable.Colorpicker = (function()
 
 	return Element
 end)()
+
+
 ElementsTable.Input = (function()
 	local Element = {}
 	Element.__index = Element
