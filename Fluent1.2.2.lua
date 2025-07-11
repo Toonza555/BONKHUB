@@ -2166,12 +2166,12 @@ Components.Element = (function()
 			Element.LabelHolder,
 			New("UIGradient", {
 				Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
 				},
 				Rotation = 90,
 				Transparency = NumberSequence.new{
-					NumberSequenceKeypoint.new(0, 0.8),
+					NumberSequenceKeypoint.new(0, 0.85),
 					NumberSequenceKeypoint.new(1, 1)
 				}
 			})
@@ -2181,7 +2181,7 @@ Components.Element = (function()
 			Element.TitleLabel.Text = Set
 			if Library.Windows and #Library.Windows > 0 then
 				local currentWindow = Library.Windows[#Library.Windows]
-				if currentWindow and currentWindow.AllElements then
+				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
 					currentWindow.AllElements[Element.Frame].title = Set
 				end
 			end
@@ -2193,16 +2193,27 @@ Components.Element = (function()
 			Element.DescLabel.Visible = Set ~= ""
 			if Library.Windows and #Library.Windows > 0 then
 				local currentWindow = Library.Windows[#Library.Windows]
-				if currentWindow and currentWindow.AllElements then
+				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
 					currentWindow.AllElements[Element.Frame].description = Set
 				end
 			end
 		end
 
-		function Element:GetTitle() return Element.TitleLabel.Text end
-		function Element:GetDesc() return Element.DescLabel.Text end
-		function Element:Visible(Bool) Element.Frame.Visible = Bool end
-		function Element:Destroy() Element.Frame:Destroy() end
+		function Element:GetTitle()
+			return Element.TitleLabel.Text
+		end
+
+		function Element:GetDesc()
+			return Element.DescLabel.Text
+		end
+
+		function Element:Visible(Bool)
+			Element.Frame.Visible = Bool
+		end
+
+		function Element:Destroy()
+			Element.Frame:Destroy()
+		end
 
 		Element:SetTitle(Title)
 		Element:SetDesc(Desc)
