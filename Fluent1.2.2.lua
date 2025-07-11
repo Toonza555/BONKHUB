@@ -1909,6 +1909,7 @@ local Components = {
 		Restore = "rbxassetid://9886659001",
 	},
 }
+
 --[[
 Components.Element = (function()
 	local New = Creator.New
@@ -2089,71 +2090,135 @@ Components.Element = (function()
 		local Element = {}
 		local Options = Options or {}
 
+		-- Enhanced Title Label with better typography
 		Element.TitleLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal),
 			Text = Title,
-			TextColor3 = Color3.fromRGB(235, 235, 245),
+			TextColor3 = Color3.fromRGB(255, 255, 255),
 			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, 0, 0, 18),
+			Size = UDim2.new(1, 0, 0, 16),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
+			TextStrokeTransparency = 0.8,
+			TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 			ThemeTag = {
 				TextColor3 = "Text",
 			},
 		})
 
+		-- Enhanced Description Label with better readability
 		Element.DescLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
 			Text = Desc,
-			TextColor3 = Color3.fromRGB(180, 180, 200),
-			TextSize = 12,
+			TextColor3 = Color3.fromRGB(180, 180, 180),
+			TextSize = 11,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 14),
+			Size = UDim2.new(1, 0, 0, 12),
+			LineHeight = 1.2,
 			ThemeTag = {
 				TextColor3 = "SubText",
 			},
 		})
 
+		-- Accent Bar for visual appeal
+		Element.AccentBar = New("Frame", {
+			Size = UDim2.new(0, 3, 1, 0),
+			BackgroundColor3 = Color3.fromRGB(64, 150, 255),
+			BorderSizePixel = 0,
+			Position = UDim2.fromOffset(0, 0),
+			ThemeTag = {
+				BackgroundColor3 = "Accent",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 2),
+			}),
+		})
+
+		-- Icon placeholder (optional)
+		Element.IconFrame = New("Frame", {
+			Size = UDim2.fromOffset(20, 20),
+			BackgroundColor3 = Color3.fromRGB(64, 150, 255),
+			BackgroundTransparency = 0.8,
+			Position = UDim2.fromOffset(-30, 8),
+			AnchorPoint = Vector2.new(0, 0),
+			ThemeTag = {
+				BackgroundColor3 = "Accent",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 10),
+			}),
+			New("ImageLabel", {
+				Size = UDim2.fromOffset(12, 12),
+				Position = UDim2.fromScale(0.5, 0.5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
+				ImageColor3 = Color3.fromRGB(255, 255, 255),
+				ImageTransparency = 0.3,
+			}),
+		})
+
+		-- Enhanced Label Holder with better spacing
 		Element.LabelHolder = New("Frame", {
 			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(14, 0),
-			Size = UDim2.new(1, -28, 0, 0),
+			Position = UDim2.fromOffset(16, 0),
+			Size = UDim2.new(1, -32, 0, 0),
 		}, {
 			New("UIListLayout", {
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = UDim.new(0, 4),
+				Padding = UDim.new(0, 2),
 			}),
 			New("UIPadding", {
-				PaddingTop = UDim.new(0, 10),
-				PaddingBottom = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 16),
+				PaddingTop = UDim.new(0, 16),
+				PaddingLeft = UDim.new(0, 4),
+				PaddingRight = UDim.new(0, 4),
 			}),
 			Element.TitleLabel,
 			Element.DescLabel,
 		})
 
+		-- Enhanced Border with gradient effect
 		Element.Border = New("UIStroke", {
+			Transparency = 0.3,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-			Color = Color3.fromRGB(60, 60, 60),
-			Transparency = 0.35,
+			Color = Color3.fromRGB(70, 70, 70),
+			Thickness = 1,
 			ThemeTag = {
 				Color = "ElementBorder",
 			},
 		})
 
+		-- Gradient Background
+		Element.Gradient = New("UIGradient", {
+			Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
+			},
+			Rotation = 45,
+		})
+
+		-- Main Frame with enhanced styling
 		Element.Frame = New("TextButton", {
-			Visible = Options.Visible ~= false,
+			Visible = Options.Visible and Options.Visible or true,
 			Size = UDim2.new(1, 0, 0, 0),
-			BackgroundTransparency = 0.4,
-			BackgroundColor3 = Color3.fromRGB(40, 40, 45),
-			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 0.1,
+			BackgroundColor3 = Color3.fromRGB(40, 40, 40),
 			Parent = Parent,
+			AutomaticSize = Enum.AutomaticSize.Y,
 			Text = "",
 			LayoutOrder = 7,
+			ClipsDescendants = false,
 			ThemeTag = {
 				BackgroundColor3 = "Element",
 				BackgroundTransparency = "ElementTransparency",
@@ -2163,20 +2228,26 @@ Components.Element = (function()
 				CornerRadius = UDim.new(0, 8),
 			}),
 			Element.Border,
+			Element.Gradient,
+			Element.AccentBar,
 			Element.LabelHolder,
-			New("UIGradient", {
-				Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
-				},
-				Rotation = 90,
-				Transparency = NumberSequence.new{
-					NumberSequenceKeypoint.new(0, 0.85),
-					NumberSequenceKeypoint.new(1, 1)
-				}
-			})
 		})
 
+		-- Hover Glow Effect
+		Element.HoverGlow = New("ImageLabel", {
+			Size = UDim2.new(1, 20, 1, 20),
+			Position = UDim2.fromOffset(-10, -10),
+			BackgroundTransparency = 1,
+			Image = "rbxasset://textures/ui/Controls/DesignSystem/RoundedRect_16px.png",
+			ImageColor3 = Color3.fromRGB(64, 150, 255),
+			ImageTransparency = 1,
+			ScaleType = Enum.ScaleType.Slice,
+			SliceCenter = Rect.new(8, 8, 8, 8),
+			ZIndex = -1,
+			Parent = Element.Frame,
+		})
+
+		-- Enhanced Methods
 		function Element:SetTitle(Set)
 			Element.TitleLabel.Text = Set
 			if Library.Windows and #Library.Windows > 0 then
@@ -2187,16 +2258,40 @@ Components.Element = (function()
 			end
 		end
 
+		function Element:Visible(Bool)
+			Element.Frame.Visible = Bool
+		end
+
 		function Element:SetDesc(Set)
-			Set = Set or ""
+			if Set == nil then
+				Set = ""
+			end
+			if Set == "" then
+				Element.DescLabel.Visible = false
+			else
+				Element.DescLabel.Visible = true
+			end
 			Element.DescLabel.Text = Set
-			Element.DescLabel.Visible = Set ~= ""
 			if Library.Windows and #Library.Windows > 0 then
 				local currentWindow = Library.Windows[#Library.Windows]
 				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
 					currentWindow.AllElements[Element.Frame].description = Set
 				end
 			end
+		end
+
+		function Element:SetIcon(ImageId)
+			if ImageId and ImageId ~= "" then
+				Element.IconFrame.Visible = true
+				Element.IconFrame.ImageLabel.Image = ImageId
+			else
+				Element.IconFrame.Visible = false
+			end
+		end
+
+		function Element:SetAccentColor(Color)
+			Element.AccentBar.BackgroundColor3 = Color
+			Element.IconFrame.BackgroundColor3 = Color
 		end
 
 		function Element:GetTitle()
@@ -2207,17 +2302,15 @@ Components.Element = (function()
 			return Element.DescLabel.Text
 		end
 
-		function Element:Visible(Bool)
-			Element.Frame.Visible = Bool
-		end
-
 		function Element:Destroy()
 			Element.Frame:Destroy()
 		end
 
+		-- Initialize
 		Element:SetTitle(Title)
 		Element:SetDesc(Desc)
 
+		-- Register with Library
 		if Library.Windows and #Library.Windows > 0 then
 			local currentWindow = Library.Windows[#Library.Windows]
 			if currentWindow and currentWindow.RegisterElement then
@@ -2225,7 +2318,9 @@ Components.Element = (function()
 			end
 		end
 
+		-- Enhanced Hover Effects
 		if Hover then
+			local Themes = Library.Themes
 			local Motor, SetTransparency = Creator.SpringMotor(
 				Creator.GetThemeProperty("ElementTransparency"),
 				Element.Frame,
@@ -2234,17 +2329,43 @@ Components.Element = (function()
 				true
 			)
 
+			local GlowMotor, SetGlowTransparency = Creator.SpringMotor(
+				1,
+				Element.HoverGlow,
+				"ImageTransparency",
+				false,
+				true
+			)
+
+			local ScaleMotor, SetScale = Creator.SpringMotor(
+				1,
+				Element.Frame,
+				"Size",
+				false,
+				true
+			)
+
 			Creator.AddSignal(Element.Frame.MouseEnter, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.1)
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - Creator.GetThemeProperty("HoverChange"))
+				SetGlowTransparency(0.7)
+				-- Subtle scale effect
+				local currentSize = Element.Frame.Size
+				SetScale(UDim2.new(currentSize.X.Scale, currentSize.X.Offset, currentSize.Y.Scale, currentSize.Y.Offset))
 			end)
+
 			Creator.AddSignal(Element.Frame.MouseLeave, function()
 				SetTransparency(Creator.GetThemeProperty("ElementTransparency"))
+				SetGlowTransparency(1)
 			end)
+
 			Creator.AddSignal(Element.Frame.MouseButton1Down, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + 0.05)
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + Creator.GetThemeProperty("HoverChange"))
+				SetGlowTransparency(0.9)
 			end)
+
 			Creator.AddSignal(Element.Frame.MouseButton1Up, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.05)
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - Creator.GetThemeProperty("HoverChange"))
+				SetGlowTransparency(0.7)
 			end)
 		end
 
