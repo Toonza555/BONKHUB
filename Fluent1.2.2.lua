@@ -2376,7 +2376,6 @@ Components.Tab = (function()
 	return TabModule
 end)()
 
---[[
 Components.Button = (function()
 	local New = Creator.New
 
@@ -2447,96 +2446,6 @@ Components.Button = (function()
 		end)
 		Creator.AddSignal(Button.Frame.MouseButton1Up, function()
 			SetTransparency(0.97)
-		end)
-
-		return Button
-	end
-end)()
-]]
-Components.Button = (function()
-	local New = Creator.New
-	local Spring = Flipper.Spring.new
-
-	return function(Theme, Parent, DialogCheck)
-		DialogCheck = DialogCheck or false
-		local Button = {}
-
-		Button.Title = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
-			TextColor3 = Color3.fromRGB(235, 235, 235),
-			TextSize = 15,
-			TextWrapped = true,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			TextYAlignment = Enum.TextYAlignment.Center,
-			BackgroundTransparency = 1,
-			Size = UDim2.fromScale(1, 1),
-			ThemeTag = {
-				TextColor3 = DialogCheck and "DialogText" or "Text",
-			},
-		})
-
-		Button.HoverFrame = New("Frame", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-			ThemeTag = {
-				BackgroundColor3 = DialogCheck and "DialogHover" or "Hover",
-			},
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-		})
-
-		Button.Shadow = New("ImageLabel", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = UDim2.new(1, 12, 1, 12),
-			BackgroundTransparency = 1,
-			Image = "rbxassetid://1316045217", -- Soft shadow
-			ImageTransparency = 0.5,
-			ZIndex = 0,
-		})
-
-		Button.Frame = New("TextButton", {
-			Size = UDim2.new(0, 160, 0, 36),
-			BackgroundTransparency = 0,
-			AutoButtonColor = false,
-			Parent = Parent,
-			ThemeTag = {
-				BackgroundColor3 = DialogCheck and "DialogButton" or "ButtonBackground",
-			},
-		}, {
-			Button.Shadow,
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-			New("UIStroke", {
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Transparency = 0.4,
-				Thickness = 1.2,
-				ThemeTag = {
-					Color = DialogCheck and "DialogButtonBorder" or "Border",
-				},
-			}),
-			Button.HoverFrame,
-			Button.Title,
-		})
-
-		local Motor, SetTransparency = Creator.SpringMotor(1, Button.HoverFrame, "BackgroundTransparency", DialogCheck)
-
-		Creator.AddSignal(Button.Frame.MouseEnter, function()
-			SetTransparency(0.93)
-		end)
-		Creator.AddSignal(Button.Frame.MouseLeave, function()
-			SetTransparency(1)
-		end)
-		Creator.AddSignal(Button.Frame.MouseButton1Down, function()
-			SetTransparency(1)
-			Button.Frame:TweenSize(UDim2.new(0, 155, 0, 33), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.07, true)
-		end)
-		Creator.AddSignal(Button.Frame.MouseButton1Up, function()
-			SetTransparency(0.93)
-			Button.Frame:TweenSize(UDim2.new(0, 160, 0, 36), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.12, true)
 		end)
 
 		return Button
@@ -4659,6 +4568,7 @@ end)()
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
 
+--[[
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4683,6 +4593,94 @@ ElementsTable.Button = (function()
 		})
 
 		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
+			Library:SafeCallback(Config.Callback)
+		end)
+
+		return ButtonFrame
+	end
+
+	return Element
+end)()
+]]
+ElementsTable.Button = (function()
+	local Element = {}
+	Element.__index = Element
+	Element.__type = "Button"
+
+	local TweenService = game:GetService("TweenService")
+	local Flipper = require(script.Parent.Parent.Flipper)
+	local Spring = Flipper.Spring.new
+
+	function Element:New(Config)
+		assert(Config.Title, "Button - Missing Title")
+		Config.Callback = Config.Callback or function() end
+
+		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
+
+		local ButtonBG = ButtonFrame.Frame
+
+		-- Add Icon
+		local ButtonIco = New("ImageLabel", {
+			Image = "rbxassetid://10709791437",
+			Size = UDim2.fromOffset(18, 18),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			BackgroundTransparency = 1,
+			ImageTransparency = 0.1,
+			Parent = ButtonBG,
+			ThemeTag = {
+				ImageColor3 = "Text",
+			},
+		})
+
+		-- Add UI Enhancements
+		New("UICorner", {
+			CornerRadius = UDim.new(0, 6),
+			Parent = ButtonBG,
+		})
+
+		New("UIStroke", {
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = Color3.fromRGB(100, 100, 100),
+			Transparency = 0.4,
+			Thickness = 1,
+			Parent = ButtonBG,
+		})
+
+		New("UIPadding", {
+			PaddingLeft = UDim.new(0, 12),
+			PaddingRight = UDim.new(0, 12),
+			PaddingTop = UDim.new(0, 6),
+			PaddingBottom = UDim.new(0, 6),
+			Parent = ButtonBG,
+		})
+
+		-- Hover Effect
+		ButtonBG.MouseEnter:Connect(function()
+			TweenService:Create(ButtonIco, TweenInfo.new(0.2), { ImageTransparency = 0 }):Play()
+			TweenService:Create(ButtonBG, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(50, 50, 50) }):Play()
+		end)
+
+		ButtonBG.MouseLeave:Connect(function()
+			TweenService:Create(ButtonIco, TweenInfo.new(0.2), { ImageTransparency = 0.1 }):Play()
+			TweenService:Create(ButtonBG, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }):Play()
+		end)
+
+		-- Click Effect with Flipper Spring
+		local motor = Flipper.SingleMotor.new(0)
+		motor:onStep(function(value)
+			ButtonBG.Size = UDim2.new(1, 0, 0, 40 - value * 2)
+		end)
+
+		Creator.AddSignal(ButtonBG.MouseButton1Click, function()
+			motor:setGoal(Spring(1, {
+				frequency = 4,
+				dampingRatio = 1,
+			}))
+			task.delay(0.15, function()
+				motor:setGoal(Spring(0))
+			end)
+
 			Library:SafeCallback(Config.Callback)
 		end)
 
