@@ -2084,162 +2084,76 @@ end)()
 Components.Element = (function()
 	local New = Creator.New
 	local Spring = Flipper.Spring.new
-	local TweenService = game:GetService("TweenService")
 
 	return function(Title, Desc, Parent, Hover, Options)
 		local Element = {}
 		local Options = Options or {}
 
-		-- Enhanced Title Label with better typography
 		Element.TitleLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal),
 			Text = Title,
-			TextColor3 = Color3.fromRGB(255, 255, 255),
+			TextColor3 = Color3.fromRGB(235, 235, 245),
 			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, 0, 0, 16),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			Size = UDim2.new(1, 0, 0, 18),
 			BackgroundTransparency = 1,
-			TextStrokeTransparency = 0.8,
-			TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 			ThemeTag = {
 				TextColor3 = "Text",
 			},
 		})
 
-		-- Enhanced Description Label with improved readability
 		Element.DescLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 			Text = Desc,
-			TextColor3 = Color3.fromRGB(180, 180, 180),
+			TextColor3 = Color3.fromRGB(180, 180, 200),
 			TextSize = 12,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 14),
-			RichText = true,
-			TextStrokeTransparency = 0.9,
-			TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 			ThemeTag = {
 				TextColor3 = "SubText",
 			},
 		})
 
-		-- Accent line for visual enhancement
-		Element.AccentLine = New("Frame", {
-			Size = UDim2.new(0, 3, 1, 0),
-			BackgroundColor3 = Color3.fromRGB(0, 162, 255),
-			BorderSizePixel = 0,
-			Position = UDim2.new(0, 0, 0, 0),
-			BackgroundTransparency = 0.3,
-			ThemeTag = {
-				BackgroundColor3 = "Accent",
-			},
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 2),
-			}),
-		})
-
-		-- Icon holder for future icon support
-		Element.IconHolder = New("Frame", {
-			Size = UDim2.new(0, 20, 0, 20),
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -30, 0, 0),
-			AnchorPoint = Vector2.new(1, 0),
-		})
-
-		-- Status indicator (optional dot)
-		Element.StatusDot = New("Frame", {
-			Size = UDim2.new(0, 6, 0, 6),
-			BackgroundColor3 = Color3.fromRGB(46, 204, 113),
-			BorderSizePixel = 0,
-			Position = UDim2.new(1, -8, 0, 8),
-			AnchorPoint = Vector2.new(1, 0),
-			BackgroundTransparency = 0.2,
-			Visible = Options.ShowStatus or false,
-			Parent = Element.IconHolder,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(1, 0),
-			}),
-		})
-
-		-- Enhanced Label Holder with better spacing
 		Element.LabelHolder = New("Frame", {
 			AutomaticSize = Enum.AutomaticSize.Y,
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(16, 0),
-			Size = UDim2.new(1, -40, 0, 0),
+			Position = UDim2.fromOffset(14, 0),
+			Size = UDim2.new(1, -28, 0, 0),
 		}, {
 			New("UIListLayout", {
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = UDim.new(0, 2),
+				Padding = UDim.new(0, 4),
 			}),
 			New("UIPadding", {
-				PaddingBottom = UDim.new(0, 16),
-				PaddingTop = UDim.new(0, 16),
-				PaddingLeft = UDim.new(0, 2),
-				PaddingRight = UDim.new(0, 2),
+				PaddingTop = UDim.new(0, 10),
+				PaddingBottom = UDim.new(0, 10),
 			}),
 			Element.TitleLabel,
 			Element.DescLabel,
 		})
 
-		-- Enhanced Border with gradient effect
 		Element.Border = New("UIStroke", {
-			Transparency = 0.4,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-			Color = Color3.fromRGB(40, 40, 40),
-			Thickness = 1,
+			Color = Color3.fromRGB(60, 60, 60),
+			Transparency = 0.35,
 			ThemeTag = {
 				Color = "ElementBorder",
 			},
 		})
 
-		-- Gradient background for depth
-		Element.Gradient = New("UIGradient", {
-			Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
-			}),
-			Rotation = 90,
-			Transparency = NumberSequence.new({
-				NumberSequenceKeypoint.new(0, 0.85),
-				NumberSequenceKeypoint.new(1, 0.92)
-			}),
-		})
-
-		-- Shadow effect
-		Element.Shadow = New("ImageLabel", {
-			Size = UDim2.new(1, 6, 1, 6),
-			Position = UDim2.new(0, -3, 0, 3),
-			BackgroundTransparency = 1,
-			Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
-			ImageColor3 = Color3.fromRGB(0, 0, 0),
-			ImageTransparency = 0.8,
-			ZIndex = -1,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-		})
-
-		-- Main Enhanced Frame
 		Element.Frame = New("TextButton", {
-			Visible = Options.Visible and Options.Visible or true,
+			Visible = Options.Visible ~= false,
 			Size = UDim2.new(1, 0, 0, 0),
-			BackgroundTransparency = 0.82,
-			BackgroundColor3 = Color3.fromRGB(50, 50, 50),
-			Parent = Parent,
+			BackgroundTransparency = 0.4,
+			BackgroundColor3 = Color3.fromRGB(40, 40, 45),
 			AutomaticSize = Enum.AutomaticSize.Y,
+			Parent = Parent,
 			Text = "",
 			LayoutOrder = 7,
-			ClipsDescendants = false,
 			ThemeTag = {
 				BackgroundColor3 = "Element",
 				BackgroundTransparency = "ElementTransparency",
@@ -2249,89 +2163,50 @@ Components.Element = (function()
 				CornerRadius = UDim.new(0, 8),
 			}),
 			Element.Border,
-			Element.Gradient,
-			Element.Shadow,
-			Element.AccentLine,
 			Element.LabelHolder,
-			Element.IconHolder,
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
+				},
+				Rotation = 90,
+				Transparency = NumberSequence.new{
+					NumberSequenceKeypoint.new(0, 0.8),
+					NumberSequenceKeypoint.new(1, 1)
+				}
+			})
 		})
 
-		-- Enhanced Methods
 		function Element:SetTitle(Set)
 			Element.TitleLabel.Text = Set
 			if Library.Windows and #Library.Windows > 0 then
 				local currentWindow = Library.Windows[#Library.Windows]
-				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
+				if currentWindow and currentWindow.AllElements then
 					currentWindow.AllElements[Element.Frame].title = Set
 				end
 			end
 		end
 
-		function Element:Visible(Bool)
-			Element.Frame.Visible = Bool
-			if Bool then
-				Element.Frame.Size = UDim2.new(1, 0, 0, 0)
-				TweenService:Create(Element.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-					BackgroundTransparency = 0.82
-				}):Play()
-			end
-		end
-
 		function Element:SetDesc(Set)
-			if Set == nil then
-				Set = ""
-			end
-			if Set == "" then
-				Element.DescLabel.Visible = false
-			else
-				Element.DescLabel.Visible = true
-			end
+			Set = Set or ""
 			Element.DescLabel.Text = Set
+			Element.DescLabel.Visible = Set ~= ""
 			if Library.Windows and #Library.Windows > 0 then
 				local currentWindow = Library.Windows[#Library.Windows]
-				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
+				if currentWindow and currentWindow.AllElements then
 					currentWindow.AllElements[Element.Frame].description = Set
 				end
 			end
 		end
 
-		function Element:SetStatus(color, visible)
-			Element.StatusDot.Visible = visible or false
-			if color then
-				Element.StatusDot.BackgroundColor3 = color
-			end
-		end
+		function Element:GetTitle() return Element.TitleLabel.Text end
+		function Element:GetDesc() return Element.DescLabel.Text end
+		function Element:Visible(Bool) Element.Frame.Visible = Bool end
+		function Element:Destroy() Element.Frame:Destroy() end
 
-		function Element:Pulse()
-			local pulseInfo = TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-			TweenService:Create(Element.AccentLine, pulseInfo, {
-				BackgroundTransparency = 0.8
-			}):Play()
-		end
-
-		function Element:StopPulse()
-			TweenService:Create(Element.AccentLine, TweenInfo.new(0.3), {
-				BackgroundTransparency = 0.3
-			}):Play()
-		end
-
-		function Element:GetTitle()
-			return Element.TitleLabel.Text
-		end
-
-		function Element:GetDesc()
-			return Element.DescLabel.Text
-		end
-
-		function Element:Destroy()
-			Element.Frame:Destroy()
-		end
-
-		-- Initialize
 		Element:SetTitle(Title)
 		Element:SetDesc(Desc)
 
-		-- Register element
 		if Library.Windows and #Library.Windows > 0 then
 			local currentWindow = Library.Windows[#Library.Windows]
 			if currentWindow and currentWindow.RegisterElement then
@@ -2339,9 +2214,7 @@ Components.Element = (function()
 			end
 		end
 
-		-- Enhanced Hover Effects
 		if Hover then
-			local Themes = Library.Themes
 			local Motor, SetTransparency = Creator.SpringMotor(
 				Creator.GetThemeProperty("ElementTransparency"),
 				Element.Frame,
@@ -2350,62 +2223,17 @@ Components.Element = (function()
 				true
 			)
 
-			-- Smooth hover animations
 			Creator.AddSignal(Element.Frame.MouseEnter, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - Creator.GetThemeProperty("HoverChange"))
-				
-				-- Accent line animation
-				TweenService:Create(Element.AccentLine, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					BackgroundTransparency = 0.1,
-					Size = UDim2.new(0, 4, 1, 0)
-				}):Play()
-				
-				-- Border glow effect
-				TweenService:Create(Element.Border, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					Transparency = 0.2,
-					Color = Color3.fromRGB(0, 162, 255)
-				}):Play()
-				
-				-- Slight scale effect
-				TweenService:Create(Element.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					Size = UDim2.new(1, 2, 0, 0)
-				}):Play()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.1)
 			end)
-
 			Creator.AddSignal(Element.Frame.MouseLeave, function()
 				SetTransparency(Creator.GetThemeProperty("ElementTransparency"))
-				
-				-- Reset animations
-				TweenService:Create(Element.AccentLine, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					BackgroundTransparency = 0.3,
-					Size = UDim2.new(0, 3, 1, 0)
-				}):Play()
-				
-				TweenService:Create(Element.Border, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					Transparency = 0.4,
-					Color = Color3.fromRGB(40, 40, 40)
-				}):Play()
-				
-				TweenService:Create(Element.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-					Size = UDim2.new(1, 0, 0, 0)
-				}):Play()
 			end)
-
 			Creator.AddSignal(Element.Frame.MouseButton1Down, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + Creator.GetThemeProperty("HoverChange"))
-				
-				-- Click ripple effect
-				TweenService:Create(Element.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-					Size = UDim2.new(1, -2, 0, 0)
-				}):Play()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + 0.05)
 			end)
-
 			Creator.AddSignal(Element.Frame.MouseButton1Up, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - Creator.GetThemeProperty("HoverChange"))
-				
-				TweenService:Create(Element.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
-					Size = UDim2.new(1, 2, 0, 0)
-				}):Play()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.05)
 			end)
 		end
 
