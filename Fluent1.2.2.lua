@@ -2085,31 +2085,17 @@ Components.Element = (function()
 	local New = Creator.New
 	local Spring = Flipper.Spring.new
 
-	-- Enhanced configuration for beautiful UI
+	-- Clean and minimal configuration
 	local ELEMENT_CONFIG = {
 		FONTS = {
-			TITLE = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal),
+			TITLE = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
 			DESCRIPTION = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
 		},
-		COLORS = {
-			TITLE = Color3.fromRGB(255, 255, 255),
-			DESCRIPTION = Color3.fromRGB(200, 200, 200),
-			ACCENT = Color3.fromRGB(99, 102, 241), -- Modern purple accent
-			GLOW = Color3.fromRGB(139, 92, 246)
-		},
 		SIZES = {
-			TITLE_TEXT = 15,
+			TITLE_TEXT = 13,
 			DESCRIPTION_TEXT = 12,
-			CORNER_RADIUS = 8,
-			PADDING = 16,
-			BORDER_WIDTH = 1.5,
-			GLOW_SIZE = 12
-		},
-		ANIMATION = {
-			HOVER_SCALE = 1.02,
-			PRESS_SCALE = 0.98,
-			SPRING_DAMPING = 0.7,
-			SPRING_FREQUENCY = 3.5
+			CORNER_RADIUS = 4,
+			PADDING = 12
 		}
 	}
 
@@ -2117,64 +2103,46 @@ Components.Element = (function()
 		local Element = {}
 		local Options = Options or {}
 
-		-- Enhanced Title with better contrast
+		-- Clean title label
 		Element.TitleLabel = New("TextLabel", {
 			FontFace = ELEMENT_CONFIG.FONTS.TITLE,
 			Text = Title,
-			TextColor3 = ELEMENT_CONFIG.COLORS.TITLE,
+			TextColor3 = Color3.fromRGB(240, 240, 240),
 			TextSize = ELEMENT_CONFIG.SIZES.TITLE_TEXT,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, 0, 0, 18),
+			Size = UDim2.new(1, 0, 0, 14),
 			BackgroundTransparency = 1,
-			RichText = true,
-			TextStrokeTransparency = 0.9,
-			TextStrokeColor3 = Color3.fromRGB(0, 0, 0),
 			ThemeTag = {
 				TextColor3 = "Text",
 			},
 		})
 
-		-- Enhanced Description with better readability
+		-- Clean description label
 		Element.DescLabel = New("TextLabel", {
 			FontFace = ELEMENT_CONFIG.FONTS.DESCRIPTION,
 			Text = Desc,
-			TextColor3 = ELEMENT_CONFIG.COLORS.DESCRIPTION,
+			TextColor3 = Color3.fromRGB(200, 200, 200),
 			TextSize = ELEMENT_CONFIG.SIZES.DESCRIPTION_TEXT,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.Y,
-			Size = UDim2.new(1, 0, 0, 0),
-			LineHeight = 1.3,
+			Size = UDim2.new(1, 0, 0, 14),
 			ThemeTag = {
 				TextColor3 = "SubText",
 			},
 		})
 
-		-- Status indicator (subtle accent line)
-		Element.StatusIndicator = New("Frame", {
-			Size = UDim2.new(0, 3, 1, 0),
-			BackgroundColor3 = ELEMENT_CONFIG.COLORS.ACCENT,
-			BorderSizePixel = 0,
-			Position = UDim2.new(0, 0, 0, 0),
-			BackgroundTransparency = 0.7,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 2),
-			}),
-		})
-
-		-- Content container with better spacing
+		-- Content container
 		Element.LabelHolder = New("Frame", {
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(ELEMENT_CONFIG.SIZES.PADDING + 8, 0),
-			Size = UDim2.new(1, -(ELEMENT_CONFIG.SIZES.PADDING * 2 + 8), 0, 0),
+			Position = UDim2.fromOffset(ELEMENT_CONFIG.SIZES.PADDING, 0),
+			Size = UDim2.new(1, -(ELEMENT_CONFIG.SIZES.PADDING * 2), 0, 0),
 		}, {
 			New("UIListLayout", {
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				VerticalAlignment = Enum.VerticalAlignment.Top,
-				Padding = UDim.new(0, 6),
+				VerticalAlignment = Enum.VerticalAlignment.Center,
 			}),
 			New("UIPadding", {
 				PaddingBottom = UDim.new(0, ELEMENT_CONFIG.SIZES.PADDING),
@@ -2184,66 +2152,27 @@ Components.Element = (function()
 			Element.DescLabel,
 		})
 
-		-- Enhanced border with better visibility
+		-- Simple border
 		Element.Border = New("UIStroke", {
-			Transparency = 0.3,
+			Transparency = 0.6,
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 			Color = Color3.fromRGB(255, 255, 255),
-			Thickness = ELEMENT_CONFIG.SIZES.BORDER_WIDTH,
+			Thickness = 1,
 			ThemeTag = {
 				Color = "ElementBorder",
 			},
 		})
 
-		-- Subtle inner glow effect
-		Element.InnerGlow = New("UIStroke", {
-			Transparency = 0.8,
-			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-			Color = ELEMENT_CONFIG.COLORS.ACCENT,
-			Thickness = 1,
-		})
-
-		-- Modern gradient background
-		Element.Gradient = New("UIGradient", {
-			Color = ColorSequence.new{
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-				ColorSequenceKeypoint.new(0.5, Color3.fromRGB(250, 250, 250)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(245, 245, 245))
-			},
-			Rotation = 135,
-			Transparency = NumberSequence.new{
-				NumberSequenceKeypoint.new(0, 0.88),
-				NumberSequenceKeypoint.new(0.5, 0.92),
-				NumberSequenceKeypoint.new(1, 0.95)
-			}
-		})
-
-		-- Drop shadow effect
-		Element.Shadow = New("ImageLabel", {
-			Size = UDim2.new(1, ELEMENT_CONFIG.SIZES.GLOW_SIZE, 1, ELEMENT_CONFIG.SIZES.GLOW_SIZE),
-			Position = UDim2.new(0, -ELEMENT_CONFIG.SIZES.GLOW_SIZE/2, 0, -ELEMENT_CONFIG.SIZES.GLOW_SIZE/2),
-			BackgroundTransparency = 1,
-			Image = "rbxasset://textures/ui/GuiImagePlaceholder.png",
-			ImageColor3 = Color3.fromRGB(0, 0, 0),
-			ImageTransparency = 0.9,
-			ZIndex = -1,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, ELEMENT_CONFIG.SIZES.CORNER_RADIUS + 2),
-			}),
-		})
-
-		-- Main frame with enhanced styling
+		-- Main frame - clean and simple
 		Element.Frame = New("TextButton", {
 			Visible = Options.Visible ~= false,
 			Size = UDim2.new(1, 0, 0, 0),
-			BackgroundTransparency = 0.85,
+			BackgroundTransparency = 0.92,
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			Parent = Parent,
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Text = "",
 			LayoutOrder = Options.LayoutOrder or 7,
-			ClipsDescendants = false,
 			ThemeTag = {
 				BackgroundColor3 = "Element",
 				BackgroundTransparency = "ElementTransparency",
@@ -2252,27 +2181,20 @@ Components.Element = (function()
 			New("UICorner", {
 				CornerRadius = UDim.new(0, ELEMENT_CONFIG.SIZES.CORNER_RADIUS),
 			}),
-			Element.Shadow,
 			Element.Border,
-			Element.InnerGlow,
-			Element.Gradient,
-			Element.StatusIndicator,
 			Element.LabelHolder,
 		})
 
-		-- Enhanced methods
+		-- Simple methods
 		function Element:SetTitle(newTitle)
-			if type(newTitle) ~= "string" then
-				warn("Element:SetTitle expects a string, got " .. type(newTitle))
-				return
-			end
-			
-			Element.TitleLabel.Text = newTitle
-			
-			if Library.Windows and #Library.Windows > 0 then
-				local currentWindow = Library.Windows[#Library.Windows]
-				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
-					currentWindow.AllElements[Element.Frame].title = newTitle
+			if type(newTitle) == "string" then
+				Element.TitleLabel.Text = newTitle
+				
+				if Library.Windows and #Library.Windows > 0 then
+					local currentWindow = Library.Windows[#Library.Windows]
+					if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
+						currentWindow.AllElements[Element.Frame].title = newTitle
+					end
 				end
 			end
 		end
@@ -2299,21 +2221,12 @@ Components.Element = (function()
 			Element.Frame.Visible = isVisible
 		end
 
-		function Element:SetAccentColor(color)
-			Element.StatusIndicator.BackgroundColor3 = color
-			Element.InnerGlow.Color = color
-		end
-
 		function Element:GetTitle()
 			return Element.TitleLabel.Text
 		end
 
 		function Element:GetDesc()
 			return Element.DescLabel.Text
-		end
-
-		function Element:IsVisible()
-			return Element.Frame.Visible
 		end
 
 		function Element:Destroy()
@@ -2334,10 +2247,8 @@ Components.Element = (function()
 			end
 		end
 
-		-- Premium hover effects with scale animation
+		-- Simple hover effects
 		if Hover then
-			local TweenService = game:GetService("TweenService")
-			
 			local Motor, SetTransparency = Creator.SpringMotor(
 				Creator.GetThemeProperty("ElementTransparency"),
 				Element.Frame,
@@ -2347,72 +2258,38 @@ Components.Element = (function()
 			)
 
 			local BorderMotor, SetBorderTransparency = Creator.SpringMotor(
-				0.3,
+				0.6,
 				Element.Border,
 				"Transparency",
 				false,
 				true
 			)
 
-			local GlowMotor, SetGlowTransparency = Creator.SpringMotor(
-				0.8,
-				Element.InnerGlow,
-				"Transparency",
-				false,
-				true
-			)
-
-			-- Smooth hover animations
 			Creator.AddSignal(Element.Frame.MouseEnter, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.1)
-				SetBorderTransparency(0.1)
-				SetGlowTransparency(0.5)
-				Element.StatusIndicator.BackgroundTransparency = 0.3
-				
-				-- Subtle scale effect
-				TweenService:Create(Element.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(ELEMENT_CONFIG.ANIMATION.HOVER_SCALE, 0, 0, 0)
-				}):Play()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.08)
+				SetBorderTransparency(0.3)
 			end)
 
 			Creator.AddSignal(Element.Frame.MouseLeave, function()
 				SetTransparency(Creator.GetThemeProperty("ElementTransparency"))
-				SetBorderTransparency(0.3)
-				SetGlowTransparency(0.8)
-				Element.StatusIndicator.BackgroundTransparency = 0.7
-				
-				-- Return to normal scale
-				TweenService:Create(Element.Frame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(1, 0, 0, 0)
-				}):Play()
+				SetBorderTransparency(0.6)
 			end)
 
 			Creator.AddSignal(Element.Frame.MouseButton1Down, function()
 				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + 0.05)
-				SetBorderTransparency(0.05)
-				SetGlowTransparency(0.3)
-				
-				-- Press effect
-				TweenService:Create(Element.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(ELEMENT_CONFIG.ANIMATION.PRESS_SCALE, 0, 0, 0)
-				}):Play()
+				SetBorderTransparency(0.2)
 			end)
 
 			Creator.AddSignal(Element.Frame.MouseButton1Up, function()
-				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.1)
-				SetBorderTransparency(0.1)
-				SetGlowTransparency(0.5)
-				
-				-- Return to hover state
-				TweenService:Create(Element.Frame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-					Size = UDim2.new(ELEMENT_CONFIG.ANIMATION.HOVER_SCALE, 0, 0, 0)
-				}):Play()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - 0.08)
+				SetBorderTransparency(0.3)
 			end)
 		end
 
 		return Element
 	end
 end)()
+
 Components.Section = (function()
 	local New = Creator.New
 
