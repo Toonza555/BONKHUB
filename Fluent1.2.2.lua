@@ -1909,7 +1909,7 @@ local Components = {
 		Restore = "rbxassetid://9886659001",
 	},
 }
-
+--[[
 Components.Element = (function()
 	local New = Creator.New
 
@@ -2074,6 +2074,258 @@ Components.Element = (function()
 			end)
 			Creator.AddSignal(Element.Frame.MouseButton1Up, function()
 				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - Creator.GetThemeProperty("HoverChange"))
+			end)
+		end
+
+		return Element
+	end
+end)()
+]]
+Components.Element = (function()
+	local New = Creator.New
+	local Spring = Flipper.Spring.new
+
+	-- Configuration constants
+	local ELEMENT_CONFIG = {
+		FONTS = {
+			TITLE = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+			DESCRIPTION = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+		},
+		COLORS = {
+			TITLE = Color3.fromRGB(245, 245, 245),
+			DESCRIPTION = Color3.fromRGB(185, 185, 185),
+			BORDER = Color3.fromRGB(45, 45, 45)
+		},
+		SIZES = {
+			TITLE_TEXT = 14,
+			DESCRIPTION_TEXT = 12,
+			CORNER_RADIUS = 6,
+			PADDING = 14,
+			BORDER_WIDTH = 1
+		},
+		ANIMATION = {
+			SPRING_DAMPING = 0.8,
+			SPRING_FREQUENCY = 4,
+			HOVER_ALPHA = 0.15,
+			PRESS_ALPHA = 0.25
+		}
+	}
+
+	return function(Title, Desc, Parent, Hover, Options)
+		local Element = {}
+		local Options = Options or {}
+
+		-- Enhanced Title Label with better typography
+		Element.TitleLabel = New("TextLabel", {
+			FontFace = ELEMENT_CONFIG.FONTS.TITLE,
+			Text = Title,
+			TextColor3 = ELEMENT_CONFIG.COLORS.TITLE,
+			TextSize = ELEMENT_CONFIG.SIZES.TITLE_TEXT,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Size = UDim2.new(1, 0, 0, 16),
+			BackgroundTransparency = 1,
+			RichText = true,
+			ThemeTag = {
+				TextColor3 = "Text",
+			},
+		})
+
+		-- Enhanced Description Label with better readability
+		Element.DescLabel = New("TextLabel", {
+			FontFace = ELEMENT_CONFIG.FONTS.DESCRIPTION,
+			Text = Desc,
+			TextColor3 = ELEMENT_CONFIG.COLORS.DESCRIPTION,
+			TextSize = ELEMENT_CONFIG.SIZES.DESCRIPTION_TEXT,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			BackgroundTransparency = 1,
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Size = UDim2.new(1, 0, 0, 0),
+			LineHeight = 1.2,
+			ThemeTag = {
+				TextColor3 = "SubText",
+			},
+		})
+
+		-- Enhanced content container with better spacing
+		Element.LabelHolder = New("Frame", {
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(ELEMENT_CONFIG.SIZES.PADDING, 0),
+			Size = UDim2.new(1, -(ELEMENT_CONFIG.SIZES.PADDING * 2), 0, 0),
+		}, {
+			New("UIListLayout", {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
+				Padding = UDim.new(0, 4),
+			}),
+			New("UIPadding", {
+				PaddingBottom = UDim.new(0, ELEMENT_CONFIG.SIZES.PADDING),
+				PaddingTop = UDim.new(0, ELEMENT_CONFIG.SIZES.PADDING),
+			}),
+			Element.TitleLabel,
+			Element.DescLabel,
+		})
+
+		-- Enhanced border with modern styling
+		Element.Border = New("UIStroke", {
+			Transparency = 0.7,
+			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+			Color = ELEMENT_CONFIG.COLORS.BORDER,
+			Thickness = ELEMENT_CONFIG.SIZES.BORDER_WIDTH,
+			ThemeTag = {
+				Color = "ElementBorder",
+			},
+		})
+
+		-- Gradient overlay for modern look
+		Element.Gradient = New("UIGradient", {
+			Color = ColorSequence.new{
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(248, 248, 248))
+			},
+			Rotation = 90,
+			Transparency = NumberSequence.new{
+				NumberSequenceKeypoint.new(0, 0.92),
+				NumberSequenceKeypoint.new(1, 0.95)
+			}
+		})
+
+		-- Enhanced main frame with better visual hierarchy
+		Element.Frame = New("TextButton", {
+			Visible = Options.Visible ~= false,
+			Size = UDim2.new(1, 0, 0, 0),
+			BackgroundTransparency = 0.92,
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			Parent = Parent,
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Text = "",
+			LayoutOrder = Options.LayoutOrder or 7,
+			ClipsDescendants = false,
+			ThemeTag = {
+				BackgroundColor3 = "Element",
+				BackgroundTransparency = "ElementTransparency",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, ELEMENT_CONFIG.SIZES.CORNER_RADIUS),
+			}),
+			Element.Border,
+			Element.Gradient,
+			Element.LabelHolder,
+		})
+
+		-- Enhanced methods with better error handling
+		function Element:SetTitle(newTitle)
+			if type(newTitle) ~= "string" then
+				warn("Element:SetTitle expects a string, got " .. type(newTitle))
+				return
+			end
+			
+			Element.TitleLabel.Text = newTitle
+			
+			-- Update library registration if exists
+			if Library.Windows and #Library.Windows > 0 then
+				local currentWindow = Library.Windows[#Library.Windows]
+				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
+					currentWindow.AllElements[Element.Frame].title = newTitle
+				end
+			end
+		end
+
+		function Element:SetDesc(newDesc)
+			newDesc = newDesc or ""
+			
+			if newDesc == "" then
+				Element.DescLabel.Visible = false
+			else
+				Element.DescLabel.Visible = true
+				Element.DescLabel.Text = newDesc
+			end
+			
+			-- Update library registration if exists
+			if Library.Windows and #Library.Windows > 0 then
+				local currentWindow = Library.Windows[#Library.Windows]
+				if currentWindow and currentWindow.AllElements and currentWindow.AllElements[Element.Frame] then
+					currentWindow.AllElements[Element.Frame].description = newDesc
+				end
+			end
+		end
+
+		function Element:SetVisible(isVisible)
+			Element.Frame.Visible = isVisible
+		end
+
+		function Element:GetTitle()
+			return Element.TitleLabel.Text
+		end
+
+		function Element:GetDesc()
+			return Element.DescLabel.Text
+		end
+
+		function Element:IsVisible()
+			return Element.Frame.Visible
+		end
+
+		function Element:Destroy()
+			if Element.Frame and Element.Frame.Parent then
+				Element.Frame:Destroy()
+			end
+		end
+
+		-- Initialize element
+		Element:SetTitle(Title)
+		Element:SetDesc(Desc)
+
+		-- Register with library system
+		if Library.Windows and #Library.Windows > 0 then
+			local currentWindow = Library.Windows[#Library.Windows]
+			if currentWindow and currentWindow.RegisterElement then
+				currentWindow.RegisterElement(Element.Frame, Title, "Element", Desc)
+			end
+		end
+
+		-- Enhanced hover effects with smooth animations
+		if Hover then
+			local Motor, SetTransparency = Creator.SpringMotor(
+				Creator.GetThemeProperty("ElementTransparency"),
+				Element.Frame,
+				"BackgroundTransparency",
+				false,
+				true
+			)
+
+			local BorderMotor, SetBorderTransparency = Creator.SpringMotor(
+				0.7,
+				Element.Border,
+				"Transparency",
+				false,
+				true
+			)
+
+			-- Smooth hover enter
+			Creator.AddSignal(Element.Frame.MouseEnter, function()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - ELEMENT_CONFIG.ANIMATION.HOVER_ALPHA)
+				SetBorderTransparency(0.4)
+			end)
+
+			-- Smooth hover leave
+			Creator.AddSignal(Element.Frame.MouseLeave, function()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency"))
+				SetBorderTransparency(0.7)
+			end)
+
+			-- Press down effect
+			Creator.AddSignal(Element.Frame.MouseButton1Down, function()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") + ELEMENT_CONFIG.ANIMATION.PRESS_ALPHA)
+				SetBorderTransparency(0.2)
+			end)
+
+			-- Press up effect
+			Creator.AddSignal(Element.Frame.MouseButton1Up, function()
+				SetTransparency(Creator.GetThemeProperty("ElementTransparency") - ELEMENT_CONFIG.ANIMATION.HOVER_ALPHA)
+				SetBorderTransparency(0.4)
 			end)
 		end
 
@@ -4568,7 +4820,6 @@ end)()
 local ElementsTable = {}
 local AddSignal = Creator.AddSignal
 
---[[
 ElementsTable.Button = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4593,94 +4844,6 @@ ElementsTable.Button = (function()
 		})
 
 		Creator.AddSignal(ButtonFrame.Frame.MouseButton1Click, function()
-			Library:SafeCallback(Config.Callback)
-		end)
-
-		return ButtonFrame
-	end
-
-	return Element
-end)()
-]]
-ElementsTable.Button = (function()
-	local Element = {}
-	Element.__index = Element
-	Element.__type = "Button"
-
-	local TweenService = game:GetService("TweenService")
-	local Flipper = require(script.Parent.Parent.Flipper)
-	local Spring = Flipper.Spring.new
-
-	function Element:New(Config)
-		assert(Config.Title, "Button - Missing Title")
-		Config.Callback = Config.Callback or function() end
-
-		local ButtonFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
-
-		local ButtonBG = ButtonFrame.Frame
-
-		-- Add Icon
-		local ButtonIco = New("ImageLabel", {
-			Image = "rbxassetid://10709791437",
-			Size = UDim2.fromOffset(18, 18),
-			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -10, 0.5, 0),
-			BackgroundTransparency = 1,
-			ImageTransparency = 0.1,
-			Parent = ButtonBG,
-			ThemeTag = {
-				ImageColor3 = "Text",
-			},
-		})
-
-		-- Add UI Enhancements
-		New("UICorner", {
-			CornerRadius = UDim.new(0, 6),
-			Parent = ButtonBG,
-		})
-
-		New("UIStroke", {
-			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-			Color = Color3.fromRGB(100, 100, 100),
-			Transparency = 0.4,
-			Thickness = 1,
-			Parent = ButtonBG,
-		})
-
-		New("UIPadding", {
-			PaddingLeft = UDim.new(0, 12),
-			PaddingRight = UDim.new(0, 12),
-			PaddingTop = UDim.new(0, 6),
-			PaddingBottom = UDim.new(0, 6),
-			Parent = ButtonBG,
-		})
-
-		-- Hover Effect
-		ButtonBG.MouseEnter:Connect(function()
-			TweenService:Create(ButtonIco, TweenInfo.new(0.2), { ImageTransparency = 0 }):Play()
-			TweenService:Create(ButtonBG, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(50, 50, 50) }):Play()
-		end)
-
-		ButtonBG.MouseLeave:Connect(function()
-			TweenService:Create(ButtonIco, TweenInfo.new(0.2), { ImageTransparency = 0.1 }):Play()
-			TweenService:Create(ButtonBG, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(40, 40, 40) }):Play()
-		end)
-
-		-- Click Effect with Flipper Spring
-		local motor = Flipper.SingleMotor.new(0)
-		motor:onStep(function(value)
-			ButtonBG.Size = UDim2.new(1, 0, 0, 40 - value * 2)
-		end)
-
-		Creator.AddSignal(ButtonBG.MouseButton1Click, function()
-			motor:setGoal(Spring(1, {
-				frequency = 4,
-				dampingRatio = 1,
-			}))
-			task.delay(0.15, function()
-				motor:setGoal(Spring(0))
-			end)
-
 			Library:SafeCallback(Config.Callback)
 		end)
 
