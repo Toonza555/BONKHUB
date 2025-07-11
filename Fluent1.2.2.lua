@@ -2376,6 +2376,7 @@ Components.Tab = (function()
 	return TabModule
 end)()
 
+--[[
 Components.Button = (function()
 	local New = Creator.New
 
@@ -2446,6 +2447,96 @@ Components.Button = (function()
 		end)
 		Creator.AddSignal(Button.Frame.MouseButton1Up, function()
 			SetTransparency(0.97)
+		end)
+
+		return Button
+	end
+end)()
+]]
+Components.Button = (function()
+	local New = Creator.New
+	local Spring = Flipper.Spring.new
+
+	return function(Theme, Parent, DialogCheck)
+		DialogCheck = DialogCheck or false
+		local Button = {}
+
+		Button.Title = New("TextLabel", {
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+			TextColor3 = Color3.fromRGB(235, 235, 235),
+			TextSize = 15,
+			TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextYAlignment = Enum.TextYAlignment.Center,
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ThemeTag = {
+				TextColor3 = DialogCheck and "DialogText" or "Text",
+			},
+		})
+
+		Button.HoverFrame = New("Frame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			ThemeTag = {
+				BackgroundColor3 = DialogCheck and "DialogHover" or "Hover",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+		})
+
+		Button.Shadow = New("ImageLabel", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.new(1, 12, 1, 12),
+			BackgroundTransparency = 1,
+			Image = "rbxassetid://1316045217", -- Soft shadow
+			ImageTransparency = 0.5,
+			ZIndex = 0,
+		})
+
+		Button.Frame = New("TextButton", {
+			Size = UDim2.new(0, 160, 0, 36),
+			BackgroundTransparency = 0,
+			AutoButtonColor = false,
+			Parent = Parent,
+			ThemeTag = {
+				BackgroundColor3 = DialogCheck and "DialogButton" or "ButtonBackground",
+			},
+		}, {
+			Button.Shadow,
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			New("UIStroke", {
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Transparency = 0.4,
+				Thickness = 1.2,
+				ThemeTag = {
+					Color = DialogCheck and "DialogButtonBorder" or "Border",
+				},
+			}),
+			Button.HoverFrame,
+			Button.Title,
+		})
+
+		local Motor, SetTransparency = Creator.SpringMotor(1, Button.HoverFrame, "BackgroundTransparency", DialogCheck)
+
+		Creator.AddSignal(Button.Frame.MouseEnter, function()
+			SetTransparency(0.93)
+		end)
+		Creator.AddSignal(Button.Frame.MouseLeave, function()
+			SetTransparency(1)
+		end)
+		Creator.AddSignal(Button.Frame.MouseButton1Down, function()
+			SetTransparency(1)
+			Button.Frame:TweenSize(UDim2.new(0, 155, 0, 33), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.07, true)
+		end)
+		Creator.AddSignal(Button.Frame.MouseButton1Up, function()
+			SetTransparency(0.93)
+			Button.Frame:TweenSize(UDim2.new(0, 160, 0, 36), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.12, true)
 		end)
 
 		return Button
@@ -2968,7 +3059,9 @@ Components.Notification = (function()
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
-				ThemeTag = { ImageColor3 = "Text" },
+				ThemeTag = {
+					ImageColor3 = "Text",
+				},
 			}),
 		})
 
