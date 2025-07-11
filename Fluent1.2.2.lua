@@ -2614,6 +2614,7 @@ Components.Dialog = (function()
 
 	return Dialog
 end)()
+
 --[[
 Components.Notification = (function()
 	local Spring = Flipper.Spring.new
@@ -2855,7 +2856,6 @@ Components.Notification = (function()
 	return Notification
 end)()
 ]]
-
 Components.Notification = (function()
 	local Spring = Flipper.Spring.new
 	local Instant = Flipper.Instant.new
@@ -2868,7 +2868,7 @@ Components.Notification = (function()
 
 		Notification.Holder = New("Frame", {
 			Position = UDim2.new(1, -30, 1, -30),
-			Size = UDim2.new(0, 320, 1, -30),
+			Size = UDim2.new(0, 310, 1, -30),
 			AnchorPoint = Vector2.new(1, 1),
 			BackgroundTransparency = 1,
 			Parent = GUI,
@@ -2877,379 +2877,213 @@ Components.Notification = (function()
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				VerticalAlignment = Enum.VerticalAlignment.Bottom,
-				Padding = UDim.new(0, 12),
+				Padding = UDim.new(0, 20),
 			}),
 		})
 	end
 
 	function Notification:New(Config)
+		-- Default configuration
 		Config.Title = Config.Title or "Title"
 		Config.Content = Config.Content or "Content"
 		Config.SubContent = Config.SubContent or ""
 		Config.Duration = Config.Duration or nil
 		Config.Buttons = Config.Buttons or {}
-		Config.Icon = Config.Icon or nil
-		Config.Type = Config.Type or "Default" -- Default, Success, Warning, Error, Info
-		
-		local NewNotification = {
+
+		local Notif = {
 			Closed = false,
+			AcrylicPaint = Acrylic.AcrylicPaint(),
 		}
 
-		-- Color schemes for different notification types
-		local TypeColors = {
-			Default = {
-				Accent = Color3.fromRGB(79, 172, 254),
-				Background = Color3.fromRGB(25, 25, 25),
-				Border = Color3.fromRGB(79, 172, 254)
-			},
-			Success = {
-				Accent = Color3.fromRGB(34, 197, 94),
-				Background = Color3.fromRGB(20, 30, 25),
-				Border = Color3.fromRGB(34, 197, 94)
-			},
-			Warning = {
-				Accent = Color3.fromRGB(251, 191, 36),
-				Background = Color3.fromRGB(35, 30, 20),
-				Border = Color3.fromRGB(251, 191, 36)
-			},
-			Error = {
-				Accent = Color3.fromRGB(248, 113, 113),
-				Background = Color3.fromRGB(35, 20, 20),
-				Border = Color3.fromRGB(248, 113, 113)
-			},
-			Info = {
-				Accent = Color3.fromRGB(168, 85, 247),
-				Background = Color3.fromRGB(30, 20, 35),
-				Border = Color3.fromRGB(168, 85, 247)
-			}
-		}
-
-		local Colors = TypeColors[Config.Type] or TypeColors.Default
-
-		NewNotification.AcrylicPaint = Acrylic.AcrylicPaint()
-
-		-- Enhanced Background with gradient and glow
-		NewNotification.Background = New("Frame", {
-			Size = UDim2.new(1, 0, 1, 0),
-			Position = UDim2.fromScale(0, 0),
-			BackgroundColor3 = Colors.Background,
-			BackgroundTransparency = 0.1,
-			BorderSizePixel = 0,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 12),
-			}),
-			New("UIStroke", {
-				Color = Colors.Border,
-				Thickness = 1,
-				Transparency = 0.7,
-			}),
-			New("UIGradient", {
-				Color = ColorSequence.new({
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 200, 200))
-				}),
-				Transparency = NumberSequence.new({
-					NumberSequenceKeypoint.new(0, 0.85),
-					NumberSequenceKeypoint.new(1, 0.95)
-				}),
-				Rotation = 90,
-			}),
-		})
-
-		-- Accent bar on the left
-		NewNotification.AccentBar = New("Frame", {
-			Size = UDim2.new(0, 4, 1, 0),
-			Position = UDim2.fromScale(0, 0),
-			BackgroundColor3 = Colors.Accent,
-			BackgroundTransparency = 0,
-			BorderSizePixel = 0,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 2),
-			}),
-		})
-
-		-- Icon container (if icon is provided)
-		NewNotification.IconContainer = New("Frame", {
-			Position = UDim2.new(0, 16, 0, 16),
-			Size = UDim2.fromOffset(24, 24),
-			BackgroundColor3 = Colors.Accent,
-			BackgroundTransparency = 0.9,
-			Visible = Config.Icon ~= nil,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-			New("ImageLabel", {
-				Image = Config.Icon or "",
-				Size = UDim2.fromOffset(16, 16),
-				Position = UDim2.fromScale(0.5, 0.5),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundTransparency = 1,
-				ImageColor3 = Colors.Accent,
-			}),
-		})
-
-		local titlePosX = Config.Icon and 52 or 20
-		
-		NewNotification.Title = New("TextLabel", {
-			Position = UDim2.new(0, titlePosX, 0, 16),
+		-- Main Title
+		Notif.Title = New("TextLabel", {
+			Position = UDim2.new(0, 14, 0, 17),
+			Size = UDim2.new(1, -12, 0, 12),
 			Text = Config.Title,
 			RichText = true,
 			TextColor3 = Color3.fromRGB(255, 255, 255),
-			TextTransparency = 0,
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-			TextSize = 14,
-			TextXAlignment = "Left",
-			TextYAlignment = "Center",
-			Size = UDim2.new(1, -80, 0, 16),
-			TextWrapped = true,
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
 			BackgroundTransparency = 1,
-			ThemeTag = {
-				TextColor3 = "Text",
-			},
+			TextWrapped = true,
+			ThemeTag = { TextColor3 = "Text" },
 		})
 
-		NewNotification.ContentLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
+		-- Main Content
+		Notif.ContentLabel = New("TextLabel", {
 			Text = Config.Content,
-			TextColor3 = Color3.fromRGB(200, 200, 200),
-			TextSize = 12,
+			TextColor3 = Color3.fromRGB(240, 240, 240),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			AutomaticSize = Enum.AutomaticSize.Y,
-			Size = UDim2.new(1, 0, 0, 12),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			Size = UDim2.new(1, 0, 0, 14),
 			BackgroundTransparency = 1,
 			TextWrapped = true,
-			ThemeTag = {
-				TextColor3 = "Text",
-			},
+			ThemeTag = { TextColor3 = "Text" },
 		})
 
-		NewNotification.SubContentLabel = New("TextLabel", {
-			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Light),
+		-- Sub Content
+		Notif.SubContentLabel = New("TextLabel", {
 			Text = Config.SubContent,
-			TextColor3 = Color3.fromRGB(160, 160, 160),
-			TextSize = 11,
+			TextColor3 = Color3.fromRGB(240, 240, 240),
+			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			AutomaticSize = Enum.AutomaticSize.Y,
-			Size = UDim2.new(1, 0, 0, 11),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			Size = UDim2.new(1, 0, 0, 14),
 			BackgroundTransparency = 1,
 			TextWrapped = true,
-			ThemeTag = {
-				TextColor3 = "SubText",
-			},
+			ThemeTag = { TextColor3 = "SubText" },
 		})
 
-		NewNotification.LabelHolder = New("Frame", {
+		-- Label container
+		Notif.LabelHolder = New("Frame", {
+			Position = UDim2.fromOffset(14, 40),
+			Size = UDim2.new(1, -28, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
-			Position = UDim2.fromOffset(titlePosX, 38),
-			Size = UDim2.new(1, -titlePosX - 20, 0, 0),
 		}, {
 			New("UIListLayout", {
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = UDim.new(0, 4),
+				Padding = UDim.new(0, 3),
 			}),
-			NewNotification.ContentLabel,
-			NewNotification.SubContentLabel,
+			Notif.ContentLabel,
+			Notif.SubContentLabel,
 		})
 
-		-- Enhanced close button with hover effects
-		NewNotification.CloseButton = New("TextButton", {
+		-- Close Button
+		Notif.CloseButton = New("TextButton", {
 			Text = "",
-			Position = UDim2.new(1, -16, 0, 16),
-			Size = UDim2.fromOffset(24, 24),
+			Position = UDim2.new(1, -14, 0, 13),
+			Size = UDim2.fromOffset(20, 20),
 			AnchorPoint = Vector2.new(1, 0),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
 		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
 			New("ImageLabel", {
 				Image = Components.Close,
-				Size = UDim2.fromOffset(12, 12),
+				Size = UDim2.fromOffset(16, 16),
 				Position = UDim2.fromScale(0.5, 0.5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundTransparency = 1,
-				ImageColor3 = Color3.fromRGB(160, 160, 160),
-				ThemeTag = {
-					ImageColor3 = "Text",
-				},
+				ThemeTag = { ImageColor3 = "Text" },
 			}),
 		})
 
-		-- Progress bar for duration
-		NewNotification.ProgressBar = New("Frame", {
-			Position = UDim2.new(0, 0, 1, -2),
-			Size = UDim2.new(1, 0, 0, 2),
-			BackgroundColor3 = Colors.Accent,
-			BackgroundTransparency = 0,
-			BorderSizePixel = 0,
-			Visible = Config.Duration ~= nil,
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 1),
-			}),
-		})
-
-		NewNotification.Root = New("Frame", {
+		-- Root Notification Frame
+		Notif.Root = New("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 1, 0),
 			Position = UDim2.fromScale(1, 0),
 		}, {
-			NewNotification.AcrylicPaint.Frame,
-			NewNotification.Background,
-			NewNotification.AccentBar,
-			NewNotification.IconContainer,
-			NewNotification.Title,
-			NewNotification.CloseButton,
-			NewNotification.LabelHolder,
-			NewNotification.ProgressBar,
+			Notif.AcrylicPaint.Frame,
+			Notif.Title,
+			Notif.CloseButton,
+			Notif.LabelHolder,
 		})
 
-		if Config.Content == "" then
-			NewNotification.ContentLabel.Visible = false
-		end
+		-- Hide empty labels
+		Notif.ContentLabel.Visible = Config.Content ~= ""
+		Notif.SubContentLabel.Visible = Config.SubContent ~= ""
 
-		if Config.SubContent == "" then
-			NewNotification.SubContentLabel.Visible = false
-		end
-
-		NewNotification.Holder = New("Frame", {
+		-- Holder
+		Notif.Holder = New("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 200),
 			Parent = Notification.Holder,
 		}, {
-			NewNotification.Root,
+			Notif.Root,
 		})
 
+		-- Flipper Motor
 		local RootMotor = Flipper.GroupMotor.new({
 			Scale = 1,
-			Offset = 80,
-			Transparency = 1,
+			Offset = 60,
 		})
 
-		RootMotor:onStep(function(Values)
-			NewNotification.Root.Position = UDim2.new(Values.Scale, Values.Offset, 0, 0)
-			NewNotification.Root.BackgroundTransparency = Values.Transparency
+		RootMotor:onStep(function(values)
+			Notif.Root.Position = UDim2.new(values.Scale, values.Offset, 0, 0)
 		end)
 
-		-- Enhanced close button hover effects
-		local CloseButtonMotor = Flipper.SingleMotor.new(0)
-		CloseButtonMotor:onStep(function(Value)
-			NewNotification.CloseButton.BackgroundTransparency = 1 - (Value * 0.1)
-			NewNotification.CloseButton.ImageLabel.ImageColor3 = Color3.fromRGB(
-				160 + (Value * 95),
-				160 + (Value * 95),
-				160 + (Value * 95)
-			)
+		-- Close Action
+		Creator.AddSignal(Notif.CloseButton.MouseButton1Click, function()
+			Notif:Close()
 		end)
 
-		Creator.AddSignal(NewNotification.CloseButton.MouseEnter, function()
-			CloseButtonMotor:setGoal(Spring(1, { frequency = 6 }))
-		end)
-
-		Creator.AddSignal(NewNotification.CloseButton.MouseLeave, function()
-			CloseButtonMotor:setGoal(Spring(0, { frequency = 6 }))
-		end)
-
-		Creator.AddSignal(NewNotification.CloseButton.MouseButton1Click, function()
-			NewNotification:Close()
-		end)
-
-		function NewNotification:ApplyTransparency()
+		-- Set Acrylic Transparency
+		function Notif:ApplyTransparency()
 			if Library.Theme == "Glass" and Library.UseAcrylic then
-				local Value = Library.NotificationTransparency or 1
+				local value = Library.NotificationTransparency or 1
+				local contentTrans = 0.85 + (value * 0.08)
+				local bgTrans = 0.8 + (value * 0.1)
 
-				local notifTransparency = 0.8 + (Value * 0.08)
-				if Value > 1 then
-					notifTransparency = 0.88 + ((Value - 1) * 0.04)
+				if value > 1 then
+					contentTrans = 0.93 + ((value - 1) * 0.04)
+					bgTrans = 0.9 + ((value - 1) * 0.05)
 				end
 
-				local notifBackgroundTransparency = 0.75 + (Value * 0.1)
-				if Value > 1 then
-					notifBackgroundTransparency = 0.85 + ((Value - 1) * 0.05)
+				if self.AcrylicPaint and self.AcrylicPaint.Model then
+					self.AcrylicPaint.Model.Transparency = math.min(contentTrans, 0.97)
 				end
-
-				if NewNotification.AcrylicPaint and NewNotification.AcrylicPaint.Model then
-					NewNotification.AcrylicPaint.Model.Transparency = math.min(notifTransparency, 0.95)
-				end
-				if NewNotification.AcrylicPaint and NewNotification.AcrylicPaint.Frame and NewNotification.AcrylicPaint.Frame.Background then
-					NewNotification.AcrylicPaint.Frame.Background.BackgroundTransparency = math.min(notifBackgroundTransparency, 0.9)
+				if self.AcrylicPaint and self.AcrylicPaint.Frame and self.AcrylicPaint.Frame.Background then
+					self.AcrylicPaint.Frame.Background.BackgroundTransparency = math.min(bgTrans, 0.95)
 				end
 			end
 		end
 
-		function NewNotification:Open()
-			local ContentSize = NewNotification.LabelHolder.AbsoluteSize.Y
-			local totalHeight = (Config.Icon and 60 or 58) + ContentSize
-			NewNotification.Holder.Size = UDim2.new(1, 0, 0, totalHeight)
+		function Notif:Open()
+			local contentHeight = self.LabelHolder.AbsoluteSize.Y
+			self.Holder.Size = UDim2.new(1, 0, 0, 58 + contentHeight)
 
-			-- Enhanced opening animation
 			RootMotor:setGoal({
-				Scale = Spring(0, { frequency = 4.5, dampingRatio = 0.8 }),
-				Offset = Spring(0, { frequency = 4.5, dampingRatio = 0.8 }),
-				Transparency = Spring(0, { frequency = 6 }),
+				Scale = Spring(0, { frequency = 5 }),
+				Offset = Spring(0, { frequency = 5 }),
 			})
-
-			-- Progress bar animation if duration is set
-			if Config.Duration and NewNotification.ProgressBar then
-				local ProgressMotor = Flipper.SingleMotor.new(1)
-				ProgressMotor:onStep(function(Value)
-					NewNotification.ProgressBar.Size = UDim2.new(Value, 0, 0, 2)
-				end)
-				
-				ProgressMotor:setGoal(Spring(0, { frequency = 0.5 / Config.Duration }))
-			end
 
 			task.defer(function()
 				task.wait(0.1)
-				NewNotification:ApplyTransparency()
+				self:ApplyTransparency()
 			end)
 		end
 
-		function NewNotification:Close()
-			if not NewNotification.Closed then
-				NewNotification.Closed = true
+		function Notif:Close()
+			if self.Closed then return end
+			self.Closed = true
 
-				for i, notif in pairs(Library.ActiveNotifications or {}) do
-					if notif == NewNotification then
-						table.remove(Library.ActiveNotifications, i)
-						break
-					end
+			for i, notif in pairs(Library.ActiveNotifications or {}) do
+				if notif == self then
+					table.remove(Library.ActiveNotifications, i)
+					break
 				end
-
-				task.spawn(function()
-					-- Enhanced closing animation
-					RootMotor:setGoal({
-						Scale = Spring(1, { frequency = 5, dampingRatio = 0.9 }),
-						Offset = Spring(100, { frequency = 5, dampingRatio = 0.9 }),
-						Transparency = Spring(1, { frequency = 6 }),
-					})
-					task.wait(0.5)
-					if Library.UseAcrylic then
-						NewNotification.AcrylicPaint.Model:Destroy()
-					end
-					NewNotification.Holder:Destroy()
-				end)
 			end
+
+			task.spawn(function()
+				RootMotor:setGoal({
+					Scale = Spring(1, { frequency = 5 }),
+					Offset = Spring(60, { frequency = 5 }),
+				})
+				task.wait(0.4)
+				if Library.UseAcrylic then
+					self.AcrylicPaint.Model:Destroy()
+				end
+				self.Holder:Destroy()
+			end)
 		end
 
-		table.insert(Library.ActiveNotifications, NewNotification)
+		-- Register & Open
+		table.insert(Library.ActiveNotifications, Notif)
+		Notif:Open()
 
-		NewNotification:Open()
+		-- Auto Close if needed
 		if Config.Duration then
 			task.delay(Config.Duration, function()
-				NewNotification:Close()
+				Notif:Close()
 			end)
 		end
-		return NewNotification
+
+		return Notif
 	end
 
 	return Notification
@@ -3540,9 +3374,11 @@ Components.TitleBar = (function()
 						Title = "Yes",
 						Callback = function()
 							Library:Destroy()
-							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
-                                game:GetService("CoreGui").BONKHUBMODILE:Destroy()
-                            end
+							repeat wait()
+    							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
+                                    game:GetService("CoreGui").BONKHUBMODILE:Destroy()
+    							end
+                            until not game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE")
 						end,
 					},
 					{
