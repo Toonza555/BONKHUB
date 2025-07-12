@@ -4755,7 +4755,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local DropdownIco = New("ImageLabel", {
-			Image = "rbxassetid://10734943674", -- เปลี่ยนโลโก้ใหม่
+			Image = "rbxassetid://10709790948",
 			Size = UDim2.fromOffset(16, 16),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -8, 0.5, 0),
@@ -4791,7 +4791,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local SearchIcon = New("ImageLabel", {
-			Image = "rbxassetid://10709761530", -- Search icon
+			Image = "rbxassetid://10734943674", -- Search icon
 			Size = UDim2.fromOffset(16, 16),
 			Position = UDim2.new(0, 8, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
@@ -4824,10 +4824,11 @@ ElementsTable.Dropdown = (function()
 		local SearchContainer = New("Frame", {
 			Size = UDim2.new(1, -10, 0, 32),
 			Position = UDim2.fromOffset(5, 5),
+			BackgroundColor3 = Color3.fromRGB(35, 35, 35),
 			BackgroundTransparency = 0.1,
 			Visible = Dropdown.Searchable,
 			ThemeTag = {
-				BackgroundColor3 = "DropdownFrame", -- เปลี่ยนจาก "SearchBox" เป็น "DropdownFrame"
+				BackgroundColor3 = "DropdownHolder",
 			},
 		}, {
 			New("UICorner", {
@@ -4836,9 +4837,17 @@ ElementsTable.Dropdown = (function()
 			New("UIStroke", {
 				Transparency = 0.6,
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Color3.fromRGB(70, 70, 70),
 				ThemeTag = {
 					Color = "InElementBorder",
 				},
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
+				},
+				Rotation = 90,
 			}),
 			SearchIcon,
 			SearchBox,
