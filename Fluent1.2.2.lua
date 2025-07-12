@@ -4981,7 +4981,7 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- แก้ไข event handler สำหรับ MouseButton1Click
+		-- ปรับปรุง MouseButton1Click event handler
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.IsToggling then
 				return
@@ -4995,12 +4995,14 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Open()
 			end
 			
-			-- รอสักครู่แล้วปลด flag
-			task.wait(0.1)
-			Dropdown.IsToggling = false
+			-- ใช้ spawn เพื่อไม่ให้ block UI
+			spawn(function()
+				wait(0.2)
+				Dropdown.IsToggling = false
+			end)
 		end)
 
-		-- แก้ไข event handler สำหรับ Touch input - เพิ่มการตรวจสอบการเลื่อน
+		-- แก้ไข event handlers สำหรับ Touch input - เพิ่มค่า threshold และปรับปรุงการจัดการ
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
 				Dropdown.TouchStartPos = Input.Position
@@ -5010,12 +5012,12 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner.InputChanged, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				if Dropdown.TouchStartPos then
+				if Dropdown.TouchStartPos and not Dropdown.TouchMoved then
 					local deltaX = math.abs(Input.Position.X - Dropdown.TouchStartPos.X)
 					local deltaY = math.abs(Input.Position.Y - Dropdown.TouchStartPos.Y)
 					
-					-- ถ้าเลื่อนเกิน 10 pixels ถือว่าเป็นการเลื่อน ไม่ใช่การแตะ
-					if deltaX > 10 or deltaY > 10 then
+					-- เพิ่มค่า threshold เป็น 25 pixels แทน 10 pixels
+					if deltaX > 25 or deltaY > 25 then
 						Dropdown.TouchMoved = true
 					end
 				end
@@ -5024,9 +5026,12 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner.InputEnded, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				-- ถ้าไม่ได้เลื่อน ถึงจะเปิด/ปิด dropdown
+				-- ตรวจสอบว่าไม่ได้เลื่อนและมีตำแหน่งเริ่มต้น
 				if not Dropdown.TouchMoved and Dropdown.TouchStartPos then
+					-- ป้องกันการเรียกซ้ำ
 					if Dropdown.IsToggling then
+						Dropdown.TouchStartPos = nil
+						Dropdown.TouchMoved = false
 						return
 					end
 					
@@ -5038,12 +5043,14 @@ ElementsTable.Dropdown = (function()
 						Dropdown:Open()
 					end
 					
-					-- รอสักครู่แล้วปลด flag
-					task.wait(0.1)
-					Dropdown.IsToggling = false
+					-- ใช้ spawn เพื่อไม่ให้ block UI
+					spawn(function()
+						wait(0.2) -- เพิ่มเวลารอเป็น 0.2 วินาที
+						Dropdown.IsToggling = false
+					end)
 				end
 				
-				-- รีเซ็ตค่า
+				-- รีเซ็ตค่าเสมอ
 				Dropdown.TouchStartPos = nil
 				Dropdown.TouchMoved = false
 			end
@@ -5056,25 +5063,30 @@ ElementsTable.Dropdown = (function()
 			end)
 		end
 
-		-- แก้ไข event handler สำหรับการคลิกข้างนอก
+		-- เพิ่ม event สำหรับ detect scroll เพื่อปิด dropdown
+		local ScrollFrame = self.ScrollFrame
+		Creator.AddSignal(ScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
+			if Dropdown.Opened then
+				Dropdown:Close()
+			end
+		end)
+
+		-- ปรับปรุง event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				if not Dropdown.Opened then
 					return
 				end
 				
+				-- รอ 1 frame เพื่อให้ตำแหน่งเมาส์อัพเดท
+				wait()
+				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
 				
 				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
-				if
-					Mouse.X < AbsPos.X
-					or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1)
-					or Mouse.Y > AbsPos.Y + AbsSize.Y
-				then
+				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or 
+				   Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+					
 					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
 					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
 					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
@@ -5085,7 +5097,6 @@ ElementsTable.Dropdown = (function()
 			end
 		end)
 
-		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
 			if Dropdown.Opened then return end
 			
