@@ -4720,9 +4720,7 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 			Searchable = Config.Searchable or false,
-			IsToggling = false, -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
-			TouchStartPos = nil, -- เพิ่มตัวแปรเก็บตำแหน่งเริ่มต้นของการสัมผัส
-			TouchMoved = false -- เพิ่มตัวแปรเช็คว่าเลื่อนหรือไม่
+			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4757,7 +4755,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local DropdownIco = New("ImageLabel", {
-			Image = "rbxassetid://10709790948",
+			Image = "rbxassetid://10734943674", -- เปลี่ยนโลโก้ใหม่
 			Size = UDim2.fromOffset(16, 16),
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.new(1, -8, 0.5, 0),
@@ -4826,10 +4824,10 @@ ElementsTable.Dropdown = (function()
 		local SearchContainer = New("Frame", {
 			Size = UDim2.new(1, -10, 0, 32),
 			Position = UDim2.fromOffset(5, 5),
-			BackgroundTransparency = 0.9, -- เปลี่ยนจาก 0.1 เป็น 0.9
+			BackgroundTransparency = 0.1,
 			Visible = Dropdown.Searchable,
 			ThemeTag = {
-				BackgroundColor3 = "DropdownFrame", -- ใช้ theme เดียวกับ dropdown
+				BackgroundColor3 = "DropdownFrame", -- เปลี่ยนจาก "SearchBox" เป็น "DropdownFrame"
 			},
 		}, {
 			New("UICorner", {
@@ -4839,37 +4837,36 @@ ElementsTable.Dropdown = (function()
 				Transparency = 0.6,
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				ThemeTag = {
-					Color = "InElementBorder", -- ใช้ theme border
+					Color = "InElementBorder",
 				},
 			}),
 			SearchIcon,
 			SearchBox,
 		})
 
-		-- ปรับ transparency values ให้เข้ากับ theme
-		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.9, SearchContainer, "BackgroundTransparency")
+		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
 
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
-			SetSearchTransparency(0.85)
+			SetSearchTransparency(0.05)
 			SetSearchStrokeTransparency(0.4)
 		end)
 
 		Creator.AddSignal(SearchContainer.MouseLeave, function()
 			if not SearchBox:IsFocused() then
-				SetSearchTransparency(0.9)
+				SetSearchTransparency(0.1)
 				SetSearchStrokeTransparency(0.6)
 			end
 		end)
 
 		Creator.AddSignal(SearchBox.Focused, function()
-			SetSearchTransparency(0.8)
+			SetSearchTransparency(0.02)
 			SetSearchStrokeTransparency(0.3)
 			SearchIcon.ImageColor3 = Color3.fromRGB(100, 150, 255)
 		end)
 
 		Creator.AddSignal(SearchBox.FocusLost, function()
-			SetSearchTransparency(0.9)
+			SetSearchTransparency(0.1)
 			SetSearchStrokeTransparency(0.6)
 			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
 		end)
@@ -4981,7 +4978,7 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- ปรับปรุง MouseButton1Click event handler
+		-- แก้ไข event handler สำหรับ MouseButton1Click
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.IsToggling then
 				return
@@ -4995,64 +4992,29 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Open()
 			end
 			
-			-- ใช้ spawn เพื่อไม่ให้ block UI
-			spawn(function()
-				wait(0.2)
-				Dropdown.IsToggling = false
-			end)
+			-- รอสักครู่แล้วปลด flag
+			task.wait(0.1)
+			Dropdown.IsToggling = false
 		end)
 
-		-- แก้ไข event handlers สำหรับ Touch input - เพิ่มค่า threshold และปรับปรุงการจัดการ
+		-- แก้ไข event handler สำหรับ Touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				Dropdown.TouchStartPos = Input.Position
-				Dropdown.TouchMoved = false
-			end
-		end)
-
-		Creator.AddSignal(DropdownInner.InputChanged, function(Input)
-			if Input.UserInputType == Enum.UserInputType.Touch then
-				if Dropdown.TouchStartPos and not Dropdown.TouchMoved then
-					local deltaX = math.abs(Input.Position.X - Dropdown.TouchStartPos.X)
-					local deltaY = math.abs(Input.Position.Y - Dropdown.TouchStartPos.Y)
-					
-					-- เพิ่มค่า threshold เป็น 25 pixels แทน 10 pixels
-					if deltaX > 25 or deltaY > 25 then
-						Dropdown.TouchMoved = true
-					end
-				end
-			end
-		end)
-
-		Creator.AddSignal(DropdownInner.InputEnded, function(Input)
-			if Input.UserInputType == Enum.UserInputType.Touch then
-				-- ตรวจสอบว่าไม่ได้เลื่อนและมีตำแหน่งเริ่มต้น
-				if not Dropdown.TouchMoved and Dropdown.TouchStartPos then
-					-- ป้องกันการเรียกซ้ำ
-					if Dropdown.IsToggling then
-						Dropdown.TouchStartPos = nil
-						Dropdown.TouchMoved = false
-						return
-					end
-					
-					Dropdown.IsToggling = true
-					
-					if Dropdown.Opened then
-						Dropdown:Close()
-					else
-						Dropdown:Open()
-					end
-					
-					-- ใช้ spawn เพื่อไม่ให้ block UI
-					spawn(function()
-						wait(0.2) -- เพิ่มเวลารอเป็น 0.2 วินาที
-						Dropdown.IsToggling = false
-					end)
+				if Dropdown.IsToggling then
+					return
 				end
 				
-				-- รีเซ็ตค่าเสมอ
-				Dropdown.TouchStartPos = nil
-				Dropdown.TouchMoved = false
+				Dropdown.IsToggling = true
+				
+				if Dropdown.Opened then
+					Dropdown:Close()
+				else
+					Dropdown:Open()
+				end
+				
+				-- รอสักครู่แล้วปลด flag
+				task.wait(0.1)
+				Dropdown.IsToggling = false
 			end
 		end)
 
@@ -5063,30 +5025,25 @@ ElementsTable.Dropdown = (function()
 			end)
 		end
 
-		-- เพิ่ม event สำหรับ detect scroll เพื่อปิด dropdown
-		local ScrollFrame = self.ScrollFrame
-		Creator.AddSignal(ScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
-			if Dropdown.Opened then
-				Dropdown:Close()
-			end
-		end)
-
-		-- ปรับปรุง event handler สำหรับการคลิกข้างนอก
+		-- แก้ไข event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+			if
+				Input.UserInputType == Enum.UserInputType.MouseButton1
+				or Input.UserInputType == Enum.UserInputType.Touch
+			then
 				if not Dropdown.Opened then
 					return
 				end
 				
-				-- รอ 1 frame เพื่อให้ตำแหน่งเมาส์อัพเดท
-				wait()
-				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
 				
 				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
-				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or 
-				   Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-					
+				if
+					Mouse.X < AbsPos.X
+					or Mouse.X > AbsPos.X + AbsSize.X
+					or Mouse.Y < (AbsPos.Y - 20 - 1)
+					or Mouse.Y > AbsPos.Y + AbsSize.Y
+				then
 					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
 					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
 					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
@@ -5097,6 +5054,7 @@ ElementsTable.Dropdown = (function()
 			end
 		end)
 
+		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
 			if Dropdown.Opened then return end
 			
