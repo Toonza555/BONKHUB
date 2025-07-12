@@ -4703,6 +4703,7 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
+
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4719,7 +4720,9 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 			Searchable = Config.Searchable or false,
-			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
+			IsToggling = false, -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
+			TouchStartPos = nil, -- เพิ่มตัวแปรเก็บตำแหน่งเริ่มต้นของการสัมผัส
+			TouchMoved = false -- เพิ่มตัวแปรเช็คว่าเลื่อนหรือไม่
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4823,11 +4826,10 @@ ElementsTable.Dropdown = (function()
 		local SearchContainer = New("Frame", {
 			Size = UDim2.new(1, -10, 0, 32),
 			Position = UDim2.fromOffset(5, 5),
-			BackgroundColor3 = Color3.fromRGB(35, 35, 35),
-			BackgroundTransparency = 0.1,
+			BackgroundTransparency = 0.9, -- เปลี่ยนจาก 0.1 เป็น 0.9
 			Visible = Dropdown.Searchable,
 			ThemeTag = {
-				BackgroundColor3 = "SearchBox",
+				BackgroundColor3 = "DropdownFrame", -- ใช้ theme เดียวกับ dropdown
 			},
 		}, {
 			New("UICorner", {
@@ -4836,45 +4838,38 @@ ElementsTable.Dropdown = (function()
 			New("UIStroke", {
 				Transparency = 0.6,
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Color = Color3.fromRGB(70, 70, 70),
 				ThemeTag = {
-					Color = "InElementBorder",
+					Color = "InElementBorder", -- ใช้ theme border
 				},
-			}),
-			New("UIGradient", {
-				Color = ColorSequence.new{
-					ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),
-					ColorSequenceKeypoint.new(1, Color3.fromRGB(35, 35, 35))
-				},
-				Rotation = 90,
 			}),
 			SearchIcon,
 			SearchBox,
 		})
 
-		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
+		-- ปรับ transparency values ให้เข้ากับ theme
+		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.9, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
 
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
-			SetSearchTransparency(0.05)
+			SetSearchTransparency(0.85)
 			SetSearchStrokeTransparency(0.4)
 		end)
 
 		Creator.AddSignal(SearchContainer.MouseLeave, function()
 			if not SearchBox:IsFocused() then
-				SetSearchTransparency(0.1)
+				SetSearchTransparency(0.9)
 				SetSearchStrokeTransparency(0.6)
 			end
 		end)
 
 		Creator.AddSignal(SearchBox.Focused, function()
-			SetSearchTransparency(0.02)
+			SetSearchTransparency(0.8)
 			SetSearchStrokeTransparency(0.3)
 			SearchIcon.ImageColor3 = Color3.fromRGB(100, 150, 255)
 		end)
 
 		Creator.AddSignal(SearchBox.FocusLost, function()
-			SetSearchTransparency(0.1)
+			SetSearchTransparency(0.9)
 			SetSearchStrokeTransparency(0.6)
 			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
 		end)
@@ -5005,24 +5000,52 @@ ElementsTable.Dropdown = (function()
 			Dropdown.IsToggling = false
 		end)
 
-		-- แก้ไข event handler สำหรับ Touch input
+		-- แก้ไข event handler สำหรับ Touch input - เพิ่มการตรวจสอบการเลื่อน
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				if Dropdown.IsToggling then
-					return
+				Dropdown.TouchStartPos = Input.Position
+				Dropdown.TouchMoved = false
+			end
+		end)
+
+		Creator.AddSignal(DropdownInner.InputChanged, function(Input)
+			if Input.UserInputType == Enum.UserInputType.Touch then
+				if Dropdown.TouchStartPos then
+					local deltaX = math.abs(Input.Position.X - Dropdown.TouchStartPos.X)
+					local deltaY = math.abs(Input.Position.Y - Dropdown.TouchStartPos.Y)
+					
+					-- ถ้าเลื่อนเกิน 10 pixels ถือว่าเป็นการเลื่อน ไม่ใช่การแตะ
+					if deltaX > 10 or deltaY > 10 then
+						Dropdown.TouchMoved = true
+					end
+				end
+			end
+		end)
+
+		Creator.AddSignal(DropdownInner.InputEnded, function(Input)
+			if Input.UserInputType == Enum.UserInputType.Touch then
+				-- ถ้าไม่ได้เลื่อน ถึงจะเปิด/ปิด dropdown
+				if not Dropdown.TouchMoved and Dropdown.TouchStartPos then
+					if Dropdown.IsToggling then
+						return
+					end
+					
+					Dropdown.IsToggling = true
+					
+					if Dropdown.Opened then
+						Dropdown:Close()
+					else
+						Dropdown:Open()
+					end
+					
+					-- รอสักครู่แล้วปลด flag
+					task.wait(0.1)
+					Dropdown.IsToggling = false
 				end
 				
-				Dropdown.IsToggling = true
-				
-				if Dropdown.Opened then
-					Dropdown:Close()
-				else
-					Dropdown:Open()
-				end
-				
-				-- รอสักครู่แล้วปลด flag
-				task.wait(0.1)
-				Dropdown.IsToggling = false
+				-- รีเซ็ตค่า
+				Dropdown.TouchStartPos = nil
+				Dropdown.TouchMoved = false
 			end
 		end)
 
@@ -5410,7 +5433,6 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
-
 
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
