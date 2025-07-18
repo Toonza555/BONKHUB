@@ -3509,7 +3509,6 @@ Components.TitleBar = (function()
 			if FPSCounter and FPSCounter.Visible then
 				local fps = math.floor(1 / RunService.Heartbeat:Wait())
 				FPSCounter.Text = "FPS: " .. fps
-				task.wait(1)
 			end
 		end
 
@@ -3517,10 +3516,9 @@ Components.TitleBar = (function()
 			if PingCounter and PingCounter.Visible then
 				local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
 				PingCounter.Text = "PING: " .. ping .. "ms"
-				task.wait(1)
 			end
 		end
-
+        --[[
 		local function ToggleFPS(enabled)
 			if FPSCounter then
 				FPSCounter.Visible = enabled
@@ -3544,6 +3542,40 @@ Components.TitleBar = (function()
 				end
 			end
 		end
+		]]
+		local function ToggleFPS(enabled)
+            if FPSCounter then
+                FPSCounter.Visible = enabled
+                if enabled and not FPSConnection then
+                    FPSConnection = spawn(function()
+                        while FPSCounter and FPSCounter.Visible do
+                            UpdateFPS()
+                            task.wait(1)
+                        end
+                    end)
+                elseif not enabled and FPSConnection then
+                    -- ไม่ต้อง disconnect เพราะ spawn จะหยุดเองเมื่อ loop จบ
+                    FPSConnection = nil
+                end
+            end
+        end
+        
+        local function TogglePing(enabled)
+            if PingCounter then
+                PingCounter.Visible = enabled
+                if enabled and not PingConnection then
+                    PingConnection = spawn(function()
+                        while PingCounter and PingCounter.Visible do
+                            UpdatePing()
+                            task.wait(1)
+                        end
+                    end)
+                elseif not enabled and PingConnection then
+                    -- ไม่ต้อง disconnect เพราะ spawn จะหยุดเองเมื่อ loop จบ
+                    PingConnection = nil
+                end
+            end
+        end
 
 		TitleBar.Frame = New("Frame", {
 			Size = UDim2.new(1, 0, 0, 42),
