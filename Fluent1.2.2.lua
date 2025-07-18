@@ -3509,6 +3509,7 @@ Components.TitleBar = (function()
 			if FPSCounter and FPSCounter.Visible then
 				local fps = math.floor(1 / RunService.Heartbeat:Wait())
 				FPSCounter.Text = "FPS: " .. fps
+				task.wait(1)
 			end
 		end
 
@@ -3516,6 +3517,7 @@ Components.TitleBar = (function()
 			if PingCounter and PingCounter.Visible then
 				local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
 				PingCounter.Text = "PING: " .. ping .. "ms"
+				task.wait(1)
 			end
 		end
 
