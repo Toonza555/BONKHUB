@@ -3210,6 +3210,7 @@ Components.Textbox = (function()
 	end
 end)()
 
+--[[
 Components.TitleBar = (function()
 	local New = Creator.New
 	local AddSignal = Creator.AddSignal
@@ -3412,531 +3413,341 @@ Components.TitleBar = (function()
 		return TitleBar
 	end
 end)()
+]]
 
-
---[[
-Components.Window = (function()
-	local Spring = Flipper.Spring.new
-	local Instant = Flipper.Instant.new
+Components.TitleBar = (function()
 	local New = Creator.New
+	local AddSignal = Creator.AddSignal
+	local RunService = game:GetService("RunService")
+	local Stats = game:GetService("Stats")
 
 	return function(Config)
-		local Window = {
-			Minimized = false,
-			Maximized = false,
-			Size = Config.Size,
-			CurrentPos = 0,
-			TabWidth = 0,
-			Position = UDim2.fromOffset(
-				Camera.ViewportSize.X / 2 - Config.Size.X.Offset / 2,
-				Camera.ViewportSize.Y / 2 - Config.Size.Y.Offset / 2
-			),
-		}
+		local TitleBar = {}
+		local FPSCounter = nil
+		local PingCounter = nil
+		local FPSConnection = nil
+		local PingConnection = nil
 
-		local Dragging, DragInput, MousePos, StartPos = false
-		local Resizing, ResizePos = false
-		local MinimizeNotif = false
+		local function BarButton(Icon, Pos, Parent, Callback)
+			local Button = {
+				Callback = Callback or function() end,
+			}
 
-		Window.AcrylicPaint = Acrylic.AcrylicPaint()
-		Window.TabWidth = Config.TabWidth
-
-		local Selector = New("Frame", {
-			Size = UDim2.fromOffset(4, 0),
-			BackgroundColor3 = Color3.fromRGB(76, 194, 255),
-			Position = UDim2.fromOffset(0, 17 + 45),
-			AnchorPoint = Vector2.new(0, 0.5),
-			ThemeTag = {
-				BackgroundColor3 = "Accent",
-			},
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 2),
-			}),
-		})
-
-		local ResizeStartFrame = New("Frame", {
-			Size = UDim2.fromOffset(20, 20),
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -20, 1, -20),
-		})
-
-		Window.TabHolder = New("ScrollingFrame", {
-			Size = UDim2.new(1, 0, 1, -45),
-			Position = UDim2.new(0, 0, 0, 45),
-			BackgroundTransparency = 1,
-			ScrollBarImageTransparency = 1,
-			ScrollBarThickness = 0,
-			BorderSizePixel = 0,
-			CanvasSize = UDim2.fromScale(0, 0),
-			ScrollingDirection = Enum.ScrollingDirection.Y,
-		}, {
-			New("UIListLayout", {
-				Padding = UDim.new(0, 4),
-			}),
-		})
-
-
-		local SearchElements = {}
-		local AllElements = {}
-
-		local function UpdateElementVisibility(searchTerm)
-			searchTerm = string.lower(searchTerm or "")
-
-			for element, data in pairs(AllElements) do
-				if element and element.Parent then
-					local shouldShow = searchTerm == "" or 
-						string.find(string.lower(data.title), searchTerm, 1, true) or
-						(data.description and string.find(string.lower(data.description), searchTerm, 1, true))
-					element.Visible = shouldShow
-				end
-			end
-
-			task.spawn(function()
-				task.wait(0.01)
-				if Window and Window.TabHolder then
-					for _, child in pairs(Window.TabHolder:GetChildren()) do
-						if child:IsA("ScrollingFrame") then
-							local layout = child:FindFirstChild("UIListLayout")
-							if layout then
-								child.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 2)
-							end
-						end
-					end
-				end
-			end)
-		end
-
-		local function RegisterElement(elementFrame, title, elementType, description)
-			if elementFrame and title then
-				AllElements[elementFrame] = {
-					title = title,
-					type = elementType or "Element",
-					description = description or ""
-				}
-			end
-		end
-
-
-		local SearchFrame = New("Frame", {
-			Size = UDim2.new(1, 0, 0, 35),
-			Position = UDim2.new(0, 0, 0, 0),
-			BackgroundTransparency = 0.9,
-			ZIndex = 10,
-			ThemeTag = {
-				BackgroundColor3 = "Element",
-			},
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-			New("UIStroke", {
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Transparency = 0.8,
-				Thickness = 1,
+			Button.Frame = New("TextButton", {
+				Size = UDim2.new(0, 34, 1, -8),
+				AnchorPoint = Vector2.new(1, 0),
+				BackgroundTransparency = 1,
+				Parent = Parent,
+				Position = Pos,
+				Text = "",
 				ThemeTag = {
-					Color = "ElementBorder",
+					BackgroundColor3 = "Text",
 				},
-			}),
-		})
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 7),
+				}),
+				New("ImageLabel", {
+					Image = Icon,
+					Size = UDim2.fromOffset(16, 16),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundTransparency = 1,
+					Name = "Icon",
+					ThemeTag = {
+						ImageColor3 = "Text",
+					},
+				}),
+			})
 
-		local SearchTextbox = Components.Textbox(SearchFrame, true)
-		SearchTextbox.Frame.Size = UDim2.new(1, -50, 1, -8)
-		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
-		SearchTextbox.Input.PlaceholderText = "Search..."
-		SearchTextbox.Input.Text = ""
+			local Motor, SetTransparency = Creator.SpringMotor(1, Button.Frame, "BackgroundTransparency")
 
+			AddSignal(Button.Frame.MouseEnter, function()
+				SetTransparency(0.94)
+			end)
+			AddSignal(Button.Frame.MouseLeave, function()
+				SetTransparency(1, true)
+			end)
+			AddSignal(Button.Frame.MouseButton1Down, function()
+				SetTransparency(0.96)
+			end)
+			AddSignal(Button.Frame.MouseButton1Up, function()
+				SetTransparency(0.94)
+			end)
+			AddSignal(Button.Frame.MouseButton1Click, Button.Callback)
 
-
-
-
-
-
-
-		local SearchIcon = New("ImageLabel", {
-			Size = UDim2.fromOffset(18, 18),
-			Position = UDim2.new(1, -25, 0.5, 0),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			BackgroundTransparency = 1,
-			Image = "rbxassetid://10734943674",
-			Parent = SearchFrame,
-			ThemeTag = {
-				ImageColor3 = "SubText",
-			},
-		})
-
-
-		Creator.AddSignal(SearchTextbox.Input:GetPropertyChangedSignal("Text"), function()
-			local searchText = SearchTextbox.Input.Text
-			UpdateElementVisibility(searchText)
-		end)
-
-
-		Creator.AddSignal(SearchTextbox.Input.FocusLost, function(enterPressed)
-		end)
-
-		Creator.AddSignal(UserInputService.InputBegan, function(input, gameProcessed)
-			if gameProcessed then return end
-
-			if input.KeyCode == Enum.KeyCode.Escape and SearchTextbox.Input:IsFocused() then
-				SearchTextbox.Input.Text = ""
-				SearchTextbox.Input:ReleaseFocus()
+			Button.SetCallback = function(Func)
+				Button.Callback = Func
 			end
-		end)
 
+			return Button
+		end
 
-		Window.SearchElements = SearchElements
-		Window.AllElements = AllElements
-		Window.RegisterElement = RegisterElement
-		Window.UpdateElementVisibility = UpdateElementVisibility
+		local function CreateCounter(Text, Position, Parent)
+			return New("TextLabel", {
+				Text = Text,
+				Size = UDim2.fromOffset(80, 20),
+				Position = Position,
+				BackgroundTransparency = 0.3,
+				BackgroundColor3 = Color3.new(0, 0, 0),
+				TextColor3 = Color3.new(1, 1, 1),
+				TextSize = 10,
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal),
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextYAlignment = Enum.TextYAlignment.Center,
+				Parent = Parent,
+				Visible = false,
+				ZIndex = 10,
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 4),
+				}),
+			})
+		end
 
-		local TabFrame = New("Frame", {
-			Size = UDim2.new(0, Window.TabWidth, 1, -66),
-			Position = UDim2.new(0, 12, 0, 54),
+		local function UpdateFPS()
+			if FPSCounter and FPSCounter.Visible then
+				local fps = math.floor(1 / RunService.Heartbeat:Wait())
+				FPSCounter.Text = "FPS: " .. fps
+			end
+		end
+
+		local function UpdatePing()
+			if PingCounter and PingCounter.Visible then
+				local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+				PingCounter.Text = "PING: " .. ping .. "ms"
+			end
+		end
+
+		local function ToggleFPS(enabled)
+            if FPSCounter then
+                FPSCounter.Visible = enabled
+                if enabled and not FPSConnection then
+                    FPSConnection = spawn(function()
+                        while FPSCounter and FPSCounter.Visible do
+                            UpdateFPS()
+                            task.wait(1)
+                        end
+                    end)
+                elseif not enabled and FPSConnection then
+                    -- ไม่ต้อง disconnect เพราะ spawn จะหยุดเองเมื่อ loop จบ
+                    FPSConnection = nil
+                end
+            end
+        end
+        
+        local function TogglePing(enabled)
+            if PingCounter then
+                PingCounter.Visible = enabled
+                if enabled and not PingConnection then
+                    PingConnection = spawn(function()
+                        while PingCounter and PingCounter.Visible do
+                            UpdatePing()
+                            task.wait(1)
+                        end
+                    end)
+                elseif not enabled and PingConnection then
+                    -- ไม่ต้อง disconnect เพราะ spawn จะหยุดเองเมื่อ loop จบ
+                    PingConnection = nil
+                end
+            end
+        end
+
+		TitleBar.Frame = New("Frame", {
+			Size = UDim2.new(1, 0, 0, 42),
 			BackgroundTransparency = 1,
-			ClipsDescendants = true,
-		}, {
-			Window.TabHolder,
-			Selector,
-			SearchFrame,
-		})
-
-		Window.TabDisplay = New("TextLabel", {
-			RichText = true,
-			Text = "Tab",
-			TextTransparency = 0,
-			FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal),
-			TextSize = 28,
-			TextXAlignment = "Left",
-			TextYAlignment = "Center",
-			Size = UDim2.new(1, -16, 0, 28),
-			Position = UDim2.fromOffset(Window.TabWidth + 26, 56),
-			BackgroundTransparency = 1,
-			ThemeTag = {
-				TextColor3 = "Text",
-			},
-		})
-
-		Window.ContainerHolder = New("Frame", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-		})
-
-		Window.ContainerAnim = New("CanvasGroup", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-		})
-
-		Window.ContainerCanvas = New("Frame", {
-			Size = UDim2.new(1, -Window.TabWidth - 32, 1, -102),
-			Position = UDim2.fromOffset(Window.TabWidth + 26, 90),
-			BackgroundTransparency = 1,
-		}, {
-			Window.ContainerAnim,
-			Window.ContainerHolder
-		})
-
-		Window.Root = New("Frame", {
-			BackgroundTransparency = 1,
-			Size = Window.Size,
-			Position = Window.Position,
 			Parent = Config.Parent,
 		}, {
-			Window.AcrylicPaint.Frame,
-			Window.TabDisplay,
-			Window.ContainerCanvas,
-			TabFrame,
-			ResizeStartFrame,
-		})
-
-		Window.TitleBar = Components.TitleBar({
-			Title = Config.Title,
-			SubTitle = Config.SubTitle,
-			Parent = Window.Root,
-			Window = Window,
-		})
-
-		if Library.UseAcrylic then
-			Window.AcrylicPaint.AddParent(Window.Root)
-		end
-
-		local SizeMotor = Flipper.GroupMotor.new({
-			X = Window.Size.X.Offset,
-			Y = Window.Size.Y.Offset,
-		})
-
-		local PosMotor = Flipper.GroupMotor.new({
-			X = Window.Position.X.Offset,
-			Y = Window.Position.Y.Offset,
-		})
-
-		_G.CDDrag = 0
-		Window.SelectorPosMotor = Flipper.SingleMotor.new(17)
-		Window.SelectorSizeMotor = Flipper.SingleMotor.new(0)
-		Window.ContainerBackMotor = Flipper.SingleMotor.new(0)
-		Window.ContainerPosMotor = Flipper.SingleMotor.new(94)
-
-		SizeMotor:onStep(function(values)
-			task.wait(_G.CDDrag / 10)
-			Window.Root.Size = UDim2.new(0, values.X, 0, values.Y)
-		end)
-
-		PosMotor:onStep(function(values)
-			task.wait(_G.CDDrag / 10)
-			Window.Root.Position = UDim2.new(0, values.X, 0, values.Y)
-		end)
-
-		local LastValue = 0
-		local LastTime = 0
-		Window.SelectorPosMotor:onStep(function(Value)
-			Selector.Position = UDim2.new(0, 0, 0, Value + 17 + 45)
-			local Now = tick()
-			local DeltaTime = Now - LastTime
-
-			if LastValue ~= nil then
-				Window.SelectorSizeMotor:setGoal(Spring((math.abs(Value - LastValue) / (DeltaTime * 60)) + 16))
-				LastValue = Value
-			end
-			LastTime = Now
-		end)
-
-		Window.SelectorSizeMotor:onStep(function(Value)
-			Selector.Size = UDim2.new(0, 4, 0, Value)
-		end)
-
-		Window.ContainerBackMotor:onStep(function(Value)
-			Window.ContainerAnim.GroupTransparency = Value
-		end)
-
-		Window.ContainerPosMotor:onStep(function(Value)
-			Window.ContainerAnim.Position = UDim2.fromOffset(0, Value)
-		end)
-
-		local OldSizeX
-		local OldSizeY
-		Window.Maximize = function(Value, NoPos, Instant)
-			Window.Maximized = Value
-			Window.TitleBar.MaxButton.Frame.Icon.Image = Value and Components.Assets.Restore or Components.Assets.Max
-
-			if Value then
-				OldSizeX = Window.Size.X.Offset
-				OldSizeY = Window.Size.Y.Offset
-			end
-			local SizeX = Value and Camera.ViewportSize.X or OldSizeX
-			local SizeY = Value and Camera.ViewportSize.Y or OldSizeY
-			SizeMotor:setGoal({
-				X = Flipper[Instant and "Instant" or "Spring"].new(SizeX, { frequency = 6 }),
-				Y = Flipper[Instant and "Instant" or "Spring"].new(SizeY, { frequency = 6 }),
-			})
-			Window.Size = UDim2.fromOffset(SizeX, SizeY)
-
-			if not NoPos then
-				PosMotor:setGoal({
-					X = Spring(Value and 0 or Window.Position.X.Offset, { frequency = 6 }),
-					Y = Spring(Value and 0 or Window.Position.Y.Offset, { frequency = 6 }),
-				})
-			end
-		end
-
-		Creator.AddSignal(Window.TitleBar.Frame.InputBegan, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
-				Dragging = true
-				MousePos = Input.Position
-				StartPos = Window.Root.Position
-
-				if Window.Maximized then
-					StartPos = UDim2.fromOffset(
-						Mouse.X - (Mouse.X * ((OldSizeX - 100) / Window.Root.AbsoluteSize.X)),
-						Mouse.Y - (Mouse.Y * (OldSizeY / Window.Root.AbsoluteSize.Y))
-					)
-				end
-
-				Input.Changed:Connect(function()
-					if Input.UserInputState == Enum.UserInputState.End then
-						Dragging = false
-					end
-				end)
-			end
-		end)
-
-		Creator.AddSignal(Window.TitleBar.Frame.InputChanged, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseMovement
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
-				DragInput = Input
-			end
-		end)
-
-		Creator.AddSignal(ResizeStartFrame.InputBegan, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
-				Resizing = true
-				ResizePos = Input.Position
-			end
-		end)
-
-		Creator.AddSignal(UserInputService.InputChanged, function(Input)
-			if Input == DragInput and Dragging then
-				local Delta = Input.Position - MousePos
-				Window.Position = UDim2.fromOffset(StartPos.X.Offset + Delta.X, StartPos.Y.Offset + Delta.Y)
-				PosMotor:setGoal({
-					X = Instant(Window.Position.X.Offset),
-					Y = Instant(Window.Position.Y.Offset),
-				})
-
-				if Window.Maximized then
-					Window.Maximize(false, true, true)
-				end
-			end
-
-			if
-				(Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)
-				and Resizing
-			then
-				local Delta = Input.Position - ResizePos
-				local StartSize = Window.Size
-
-				local TargetSize = Vector3.new(StartSize.X.Offset, StartSize.Y.Offset, 0) + Vector3.new(1, 1, 0) * Delta
-				local TargetSizeClamped =
-					Vector2.new(math.clamp(TargetSize.X, 470, 2048), math.clamp(TargetSize.Y, 380, 2048))
-
-				SizeMotor:setGoal({
-					X = Flipper.Instant.new(TargetSizeClamped.X),
-					Y = Flipper.Instant.new(TargetSizeClamped.Y),
-				})
-			end
-		end)
-
-		Creator.AddSignal(UserInputService.InputEnded, function(Input)
-			if Resizing == true or Input.UserInputType == Enum.UserInputType.Touch then
-				Resizing = false
-				Window.Size = UDim2.fromOffset(SizeMotor:getValue().X, SizeMotor:getValue().Y)
-			end
-		end)
-
-		Creator.AddSignal(Window.TabHolder.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
-			Window.TabHolder.CanvasSize = UDim2.new(0, 0, 0, Window.TabHolder.UIListLayout.AbsoluteContentSize.Y)
-		end)
-
-		Creator.AddSignal(UserInputService.InputBegan, function(Input)
-			if
-				type(Library.MinimizeKeybind) == "table"
-				and Library.MinimizeKeybind.Type == "Keybind"
-				and not UserInputService:GetFocusedTextBox()
-			then
-				if Input.KeyCode.Name == Library.MinimizeKeybind.Value then
-					Window:Minimize()
-				end
-			elseif Input.KeyCode == Library.MinimizeKey and not UserInputService:GetFocusedTextBox() then
-				Window:Minimize()
-			end
-		end)
-
-		function Window:Minimize()
-			Window.Minimized = not Window.Minimized
-			Window.Root.Visible = not Window.Minimized
-			if not MinimizeNotif then
-				MinimizeNotif = true
-				local Key = Library.MinimizeKeybind and Library.MinimizeKeybind.Value or Library.MinimizeKey.Name
-				if not Mobile then Library:Notify({
-					Title = "Interface",
-					Content = "Press " .. Key .. " to toggle the interface.",
-					Duration = 6
-					})
-				else 
-					Library:Notify({
-						Title = "Interface",
-						Content = "Tap to the button to toggle the interface.",
-						Duration = 6
-					})
-				end
-			end
-			if not RunService:IsStudio() and Mobile and Minimizer then
-				pcall(function()
-					local minimizeButton = Minimizer:FindFirstChild("Frame"):FindFirstChild("TextButton")
-					if minimizeButton then
-						local imageLabel = minimizeButton:FindFirstChild("ImageLabel")
-						if imageLabel then
-							imageLabel.Image = Window.Minimized and "rbxassetid://10734896384" or "rbxassetid://10734897102"
-						end
-					end
-				end)
-			end
-		end
-
-		function Window:Destroy()
-			if Library.UseAcrylic then
-				Window.AcrylicPaint.Model:Destroy()
-			end
-			Window.Root:Destroy()
-		end
-
-		local DialogModule = Components.Dialog:Init(Window)
-		function Window:Dialog(Config)
-			local Dialog = DialogModule:Create()
-			Dialog.Title.Text = Config.Title
-
-			local Content = New("TextLabel", {
-				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
-				Text = Config.Content,
-				TextColor3 = Color3.fromRGB(240, 240, 240),
-				TextSize = 14,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Top,
-				Size = UDim2.new(1, -40, 1, 0),
-				Position = UDim2.fromOffset(20, 60),
+			New("Frame", {
+				Size = UDim2.new(1, -16, 1, 0),
+				Position = UDim2.new(0, 16, 0, 0),
 				BackgroundTransparency = 1,
-				Parent = Dialog.Root,
-				ClipsDescendants = false,
+			}, {
+				New("UIListLayout", {
+					Padding = UDim.new(0, 8),
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+				}),
+
+				-- Logo Section
+				New("ImageLabel", {
+					Image = "rbxassetid://11262159835",
+					Size = UDim2.fromOffset(Config.LogoSize or 24, Config.LogoSize or 24),
+					BackgroundTransparency = 1,
+					LayoutOrder = 0,
+					Name = "Logo",
+					ThemeTag = {
+						ImageColor3 = Config.LogoColor and "Text" or nil,
+					},
+				}) or nil,
+
+				-- Title and Subtitle Container
+				New("Frame", {
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					LayoutOrder = 1,
+				}, {
+					New("UIListLayout", {
+						Padding = UDim.new(0, 2),
+						FillDirection = Enum.FillDirection.Horizontal,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+					}),
+
+					New("TextLabel", {
+						RichText = true,
+						Text = Config.Title,
+						FontFace = Font.new(
+							"rbxasset://fonts/families/GothamSSm.json",
+							Enum.FontWeight.Regular,
+							Enum.FontStyle.Normal
+						),
+						TextSize = 12,
+						TextXAlignment = "Left",
+						TextYAlignment = "Center",
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						LayoutOrder = 1,
+						ThemeTag = {
+							TextColor3 = "Text",
+						},
+					}),
+					Config.SubTitle and New("TextLabel", {
+						RichText = true,
+						Text = Config.SubTitle,
+						TextTransparency = 0.4,
+						FontFace = Font.new(
+							"rbxasset://fonts/families/GothamSSm.json",
+							Enum.FontWeight.Regular,
+							Enum.FontStyle.Normal
+						),
+						TextSize = 12,
+						TextXAlignment = "Left",
+						TextYAlignment = "Center",
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						LayoutOrder = 2,
+						ThemeTag = {
+							TextColor3 = "Text",
+						},
+					}) or nil,
+				}),
+			}),
+			New("Frame", {
+				BackgroundTransparency = 0.5,
+				Size = UDim2.new(1, 0, 0, 1),
+				Position = UDim2.new(0, 0, 1, 0),
 				ThemeTag = {
-					TextColor3 = "Text",
+					BackgroundColor3 = "TitleBarLine",
+				},
+			}),
+		})
+
+		-- Create counters
+		FPSCounter = CreateCounter("FPS: 0", UDim2.new(0, 10, 0, 5), TitleBar.Frame)
+		PingCounter = CreateCounter("PING: 0ms", UDim2.new(0, 100, 0, 5), TitleBar.Frame)
+
+		-- Close Button
+		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
+			Library.Window:Dialog({
+				Title = "Close",
+				Content = "Are you sure you want to unload the interface?",
+				Buttons = {
+					{
+						Title = "Yes",
+						Callback = function()
+							Library:Destroy()
+							repeat wait()
+    							if game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE") then
+                                    game:GetService("CoreGui").BONKHUBMODILE:Destroy()
+    							end
+                            until not game:GetService("CoreGui"):FindFirstChild("BONKHUBMODILE")
+						end,
+					},
+					{
+						Title = "No",
+					},
 				},
 			})
-
-			New("UISizeConstraint", {
-				MinSize = Vector2.new(300, 165),
-				MaxSize = Vector2.new(620, math.huge),
-				Parent = Dialog.Root,
-			})
-
-			Dialog.Root.Size = UDim2.fromOffset(Content.TextBounds.X + 40, 165)
-			if Content.TextBounds.X + 40 > Window.Size.X.Offset - 120 then
-				Dialog.Root.Size = UDim2.fromOffset(Window.Size.X.Offset - 120, 165)
-				Content.TextWrapped = true
-				Dialog.Root.Size = UDim2.fromOffset(Window.Size.X.Offset - 120, Content.TextBounds.Y + 150)
-			end
-
-			for _, Button in next, Config.Buttons do
-				Dialog:Button(Button.Title, Button.Callback)
-			end
-
-			Dialog:Open()
-		end
-
-		local TabModule = Components.Tab:Init(Window)
-		function Window:AddTab(TabConfig)
-			return TabModule:New(TabConfig.Title, TabConfig.Icon, Window.TabHolder)
-		end
-
-		function Window:SelectTab(Tab)
-			TabModule:SelectTab(Tab)
-		end
-
-		Creator.AddSignal(Window.TabHolder:GetPropertyChangedSignal("CanvasPosition"), function()
-			LastValue = TabModule:GetCurrentTabPos() + 16
-			LastTime = 0
-			Window.SelectorPosMotor:setGoal(Instant(TabModule:GetCurrentTabPos()))
+		end)
+        
+		-- Minimize Button
+		TitleBar.MinButton = BarButton(Components.Assets.Min, UDim2.new(1, -40, 0, 4), TitleBar.Frame, function()
+			Library.Window:Minimize()
 		end)
 
-		return Window
+		-- Settings Button
+		TitleBar.SettingsButton = BarButton("rbxassetid://10734950309", UDim2.new(1, -76, 0, 4), TitleBar.Frame, function()
+			Library.Window:Dialog({
+				Title = "Settings",
+				Content = "Configure display options",
+				Buttons = {
+					{
+						Title = "FPS Counter",
+						Callback = function()
+							local currentState = FPSCounter.Visible
+							ToggleFPS(not currentState)
+						end,
+					},
+					{
+						Title = "PING Counter",
+						Callback = function()
+							local currentState = PingCounter.Visible
+							TogglePing(not currentState)
+						end,
+					},
+					{
+						Title = "Close",
+					},
+				},
+			})
+		end)
+
+		-- Logo Access (for updating logo later if needed)
+		TitleBar.SetLogo = function(LogoId, Size, UseThemeColor)
+			local LogoFrame = TitleBar.Frame:FindFirstChild("Logo")
+			if LogoFrame then
+				LogoFrame.Image = LogoId
+				if Size then
+					LogoFrame.Size = UDim2.fromOffset(Size, Size)
+				end
+				if UseThemeColor ~= nil then
+					LogoFrame.ThemeTag = UseThemeColor and {ImageColor3 = "Text"} or {}
+				end
+			end
+		end
+
+		-- Additional methods for external control
+		TitleBar.SetFPSVisible = ToggleFPS
+		TitleBar.SetPingVisible = TogglePing
+		
+		TitleBar.GetFPSVisible = function()
+			return FPSCounter and FPSCounter.Visible or false
+		end
+		
+		TitleBar.GetPingVisible = function()
+			return PingCounter and PingCounter.Visible or false
+		end
+
+		-- Cleanup function
+		TitleBar.Destroy = function()
+			if FPSConnection then
+				FPSConnection:Disconnect()
+			end
+			if PingConnection then
+				PingConnection:Disconnect()
+			end
+		end
+		
+		return TitleBar
 	end
 end)()
-]]
+
+
 Components.Window = (function()
 	local Spring = Flipper.Spring.new
 	local Instant = Flipper.Instant.new
