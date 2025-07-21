@@ -3973,23 +3973,24 @@ BackgroundTransparency=1,
 Visible=q.SearchEnabled,
 })
 
--- Search Box
-q.UIElements.SearchBox=h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"Squircle",{
+-- Search Box Frame
+q.UIElements.SearchBox=i("Frame",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+Parent=q.UIElements.SearchContainer,
+},{
+-- Background
+h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"Squircle",{
 ThemeTag={
 ImageColor3="Background2",
 },
 ImageTransparency=0.05,
 Size=UDim2.new(1,0,1,0),
-Parent=q.UIElements.SearchContainer,
-},{
-i("UIPadding",{
-PaddingLeft=UDim.new(0,12),
-PaddingRight=UDim.new(0,36),
-PaddingTop=UDim.new(0,8),
-PaddingBottom=UDim.new(0,8),
 }),
+-- TextBox
 i("TextBox",{
-Size=UDim2.new(1,0,1,0),
+Size=UDim2.new(1,-48,1,-16),
+Position=UDim2.new(0,12,0,8),
 BackgroundTransparency=1,
 Text="",
 PlaceholderText=q.SearchPlaceholder,
@@ -4103,7 +4104,7 @@ end
 
 -- เชื่อมต่อ search box event
 if q.SearchEnabled then
-local searchInput = q.UIElements.SearchBox.TextBox
+local searchInput = q.UIElements.SearchBox.SearchInput
 h.AddSignal(searchInput:GetPropertyChangedSignal("Text"), function()
 q:FilterValues(searchInput.Text)
 end)
@@ -4359,7 +4360,7 @@ end)
 
 -- เคลียร์การค้นหาและโฟกัสที่ search box เมื่อเปิด
 if q.SearchEnabled then
-local searchInput = q.UIElements.SearchBox.TextBox
+local searchInput = q.UIElements.SearchBox.SearchInput
 searchInput.Text = ""
 q:FilterValues("")
 task.wait(0.1)
@@ -4421,7 +4422,6 @@ h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",Upd
 
 return q.__type,q
 end
-
 return n end function a.w()
 
 
