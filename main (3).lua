@@ -4524,11 +4524,11 @@ Padding=UDim.new(0,n.MenuPadding),
 FillDirection="Vertical"
 })
 
--- สร้าง Search and Clear Container
-q.UIElements.SearchContainer=i("Frame",{
+-- สร้าง Search Box
+q.UIElements.SearchBox=i("Frame",{
 Size=UDim2.new(1,0,0,34),
 ThemeTag={
-BackgroundColor3="Background"
+BackgroundColor3="ElementBackground"
 },
 },{
 i("UICorner",{
@@ -4537,10 +4537,9 @@ CornerRadius=UDim.new(0,n.MenuCorner-n.MenuPadding)
 i("UIPadding",{
 PaddingLeft=UDim.new(0,8),
 PaddingRight=UDim.new(0,8),
-PaddingTop=UDim2.new(0,6),
-PaddingBottom=UDim2.new(0,6),
+PaddingTop=UDim.new(0,6),
+PaddingBottom=UDim.new(0,6),
 }),
--- Search Icon
 i("ImageLabel",{
 Image=h.Icon"search"[1],
 ImageRectOffset=h.Icon"search"[2].ImageRectPosition,
@@ -4552,13 +4551,12 @@ ImageColor3="Icon"
 },
 AnchorPoint=Vector2.new(0,0.5),
 }),
--- Search TextBox
 i("TextBox",{
-Size=UDim2.new(1,q.Multi and -60 or -24,1,0),
+Size=UDim2.new(1,-24,1,0),
 Position=UDim2.new(0,24,0,0),
 BackgroundTransparency=1,
 Text="",
-PlaceholderText="Search...",
+PlaceholderText="ค้นหา...",
 FontFace=Font.new(h.Font,Enum.FontWeight.Regular),
 TextSize=14,
 TextXAlignment="Left",
@@ -4568,30 +4566,56 @@ PlaceholderColor3="SubText"
 },
 ClearTextOnFocus=false,
 Name="SearchInput"
-}),
--- Clear Button (แสดงเฉพาะเมื่อเป็น Multi mode)
-i("TextButton",{
-Size=UDim2.new(0,32,0,22),
-Position=UDim2.new(1,-32,0.5,0),
-AnchorPoint=Vector2.new(1,0.5),
-BackgroundTransparency=1,
-Text="",
+})
+})
+
+-- สร้าง Clear Button (แสดงเฉพาะเมื่อเป็น Multi mode)
+q.UIElements.ClearButton=i("Frame",{
+Size=UDim2.new(1,0,0,28),
+ThemeTag={
+BackgroundColor3="ElementBackground"
+},
 Visible=q.Multi or false,
-Name="ClearButton",
 },{
 i("UICorner",{
-CornerRadius=UDim.new(0,4)
+CornerRadius=UDim.new(0,n.MenuCorner-n.MenuPadding)
+}),
+i("TextButton",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+Text="",
+},{
+i("Frame",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+},{
+i("UIPadding",{
+PaddingLeft=UDim.new(0,8),
+PaddingRight=UDim.new(0,8),
 }),
 i("ImageLabel",{
 Image=h.Icon"x"[1],
 ImageRectOffset=h.Icon"x"[2].ImageRectPosition,
 ImageRectSize=h.Icon"x"[2].ImageRectSize,
 Size=UDim2.new(0,14,0,14),
-Position=UDim2.new(0.5,0,0.5,0),
+Position=UDim2.new(0,0,0.5,0),
 ThemeTag={
 ImageColor3="SubText"
 },
-AnchorPoint=Vector2.new(0.5,0.5),
+AnchorPoint=Vector2.new(0,0.5),
+}),
+i("TextLabel",{
+Text="ล้างรายการที่เลือก",
+Size=UDim2.new(1,-20,1,0),
+Position=UDim2.new(0,20,0,0),
+BackgroundTransparency=1,
+FontFace=Font.new(h.Font,Enum.FontWeight.Regular),
+TextSize=13,
+TextXAlignment="Left",
+ThemeTag={
+TextColor3="SubText"
+},
+})
 })
 })
 })
@@ -4629,8 +4653,9 @@ BackgroundTransparency=1,
 ScrollBarImageTransparency=1,
 },{
 q.UIElements.UIListLayout,
--- เพิ่ม Search Container ไว้ที่ด้านบน
-q.UIElements.SearchContainer,
+-- เพิ่ม Search Box และ Clear Button ไว้ที่ด้านบน
+q.UIElements.SearchBox,
+q.UIElements.ClearButton,
 })
 })
 })
@@ -4667,14 +4692,14 @@ end
 end
 
 -- Event สำหรับ Search Box
-h.AddSignal(q.UIElements.SearchContainer.SearchInput:GetPropertyChangedSignal("Text"),function()
-q.SearchText=q.UIElements.SearchContainer.SearchInput.Text
+h.AddSignal(q.UIElements.SearchBox.SearchInput:GetPropertyChangedSignal("Text"),function()
+q.SearchText=q.UIElements.SearchBox.SearchInput.Text
 FilterValues()
 q:Refresh(q.FilteredValues)
 end)
 
 -- Event สำหรับ Clear Button
-h.AddSignal(q.UIElements.SearchContainer.ClearButton.MouseButton1Click,function()
+h.AddSignal(q.UIElements.ClearButton.TextButton.MouseButton1Click,function()
 if q.Multi then
 q.Value={}
 q:Display()
@@ -4704,8 +4729,12 @@ end
 
 local function RecalculateListSize()
 local baseHeight=n.MenuPadding*2
--- เพิ่มความสูงของ Search Container
+-- เพิ่มความสูงของ Search Box
 baseHeight=baseHeight+34+n.MenuPadding
+-- เพิ่มความสูงของ Clear Button (ถ้ามี)
+if q.Multi then
+baseHeight=baseHeight+28+n.MenuPadding
+end
 
 local contentHeight=q.UIElements.UIListLayout.AbsoluteContentSize.Y
 local maxHeight=400 -- ความสูงสูงสุด
@@ -4756,9 +4785,9 @@ q.UIElements.Dropdown.Frame.Frame.TextLabel.Text=(u==""and"--"or u)
 end
 
 function q.Refresh(s,t)
--- เคลียร์เฉพาะ tabs ไม่ใช่ Search Container
+-- เคลียร์เฉพาะ tabs ไม่ใช่ Search Box และ Clear Button
 for u,v in next,q.UIElements.Menu.Frame.ScrollingFrame:GetChildren()do
-if not v:IsA"UIListLayout" and v~=q.UIElements.SearchContainer then
+if not v:IsA"UIListLayout" and v~=q.UIElements.SearchBox and v~=q.UIElements.ClearButton then
 v:Destroy()
 end
 end
@@ -4937,6 +4966,8 @@ Size=UDim2.new(1,0,1,0)
 task.spawn(function()
 task.wait(.1)
 q.Opened=true
+-- โฟกัสที่ Search Box เมื่อเปิด dropdown
+q.UIElements.SearchBox.SearchInput:CaptureFocus()
 end)
 
 UpdatePosition()
@@ -4960,7 +4991,7 @@ task.wait(.25)
 q.UIElements.MenuCanvas.Visible=false
 q.UIElements.MenuCanvas.Active=false
 -- เคลียร์การค้นหาเมื่อปิด dropdown
-q.UIElements.SearchContainer.SearchInput.Text=""
+q.UIElements.SearchBox.SearchInput.Text=""
 q.SearchText=""
 FilterValues()
 end)
