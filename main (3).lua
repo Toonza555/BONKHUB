@@ -4464,27 +4464,12 @@ TextOffset=0,
 Hover=false,
 }
 
--- Main container for dropdown and search
-q.UIElements.MainContainer=i("Frame",{
-Size=UDim2.new(1,0,0,40),
-BackgroundTransparency=1,
-Parent=q.DropdownFrame.UIElements.Container,
-})
-
--- Dropdown container
-q.UIElements.DropdownContainer=i("Frame",{
-Size=UDim2.new(q.SearchEnabled and 0.6 or 1, q.SearchEnabled and -5 or 0, 1, 0),
-Position=UDim2.new(0,0,0,0),
-BackgroundTransparency=1,
-Parent=q.UIElements.MainContainer,
-})
-
-q.UIElements.Dropdown=k("",nil,q.UIElements.DropdownContainer)
+q.UIElements.Dropdown=k("",nil,q.DropdownFrame.UIElements.Container)
 
 q.UIElements.Dropdown.Frame.Frame.TextLabel.TextTruncate="AtEnd"
 q.UIElements.Dropdown.Frame.Frame.TextLabel.Size=UDim2.new(1,q.UIElements.Dropdown.Frame.Frame.TextLabel.Size.X.Offset-18-12-12,0,0)
 
-q.UIElements.Dropdown.Size=UDim2.new(1,0,1,0)
+q.UIElements.Dropdown.Size=UDim2.new(1,0,0,40)
 
 i("ImageLabel",{
 Image=h.Icon"chevrons-up-down"[1],
@@ -4499,18 +4484,21 @@ AnchorPoint=Vector2.new(1,0.5),
 Parent=q.UIElements.Dropdown.Frame
 })
 
--- Search and Clear container (ข้างๆ dropdown)
-if q.SearchEnabled then
-q.UIElements.SearchAndClearContainer=i("Frame",{
-Size=UDim2.new(0.4, -5, 1, 0),
-Position=UDim2.new(0.6, 5, 0, 0),
-BackgroundTransparency=1,
-Parent=q.UIElements.MainContainer,
+q.UIElements.UIListLayout=i("UIListLayout",{
+Padding=UDim.new(0,n.MenuPadding),
+FillDirection="Vertical"
 })
 
--- Search Box Container
+-- Search และ Clear Container (ในเมนู dropdown)
+q.UIElements.SearchAndClearContainer=i("Frame",{
+Size=UDim2.new(1,0,0,34),
+BackgroundTransparency=1,
+Visible=q.SearchEnabled,
+})
+
+-- Search Box Container (70% ของพื้นที่)
 q.UIElements.SearchContainer=i("Frame",{
-Size=UDim2.new(1, -45, 1, 0),
+Size=UDim2.new(0.7, -2, 1, 0),
 Position=UDim2.new(0, 0, 0, 0),
 BackgroundTransparency=1,
 Parent=q.UIElements.SearchAndClearContainer,
@@ -4563,11 +4551,12 @@ AnchorPoint=Vector2.new(1,0.5),
 Parent=q.UIElements.SearchBox
 })
 
--- Clear List Button
-q.UIElements.ClearButton=i("Frame",{
-Size=UDim2.new(0, 40, 1, 0),
-Position=UDim2.new(1, -40, 0, 0),
+-- Clear List Button (30% ของพื้นที่)
+q.UIElements.ClearButton=i("TextButton",{
+Size=UDim2.new(0.3, -2, 1, 0),
+Position=UDim2.new(0.7, 2, 0, 0),
 BackgroundTransparency=1,
+Text="",
 Parent=q.UIElements.SearchAndClearContainer,
 },{
 -- Background
@@ -4614,12 +4603,6 @@ end)
 h.AddSignal(q.UIElements.ClearButton.MouseLeave, function()
 j(q.UIElements.ClearButton.Frame, 0.1, {ImageTransparency = 0.05}):Play()
 end)
-end
-
-q.UIElements.UIListLayout=i("UIListLayout",{
-Padding=UDim.new(0,n.MenuPadding),
-FillDirection="Vertical"
-})
 
 q.UIElements.Menu=h.NewRoundFrame(n.MenuCorner,"Squircle",{
 ThemeTag={
@@ -4653,8 +4636,10 @@ i("UIListLayout",{
 Padding=UDim.new(0,0),
 FillDirection="Vertical"
 }),
+-- Search และ Clear container จะถูกเพิ่มที่นี่
+q.UIElements.SearchAndClearContainer,
 i("ScrollingFrame",{
-Size=UDim2.new(1,0,1,0),
+Size=UDim2.new(1,0,1,q.SearchEnabled and -38 or 0), -- ปรับขนาดถ้ามี search box
 ScrollBarThickness=0,
 ScrollingDirection="Y",
 AutomaticCanvasSize="Y",
@@ -4729,11 +4714,12 @@ scrollFrame.CanvasSize=UDim2.fromOffset(0,q.UIElements.UIListLayout.AbsoluteCont
 end
 
 local function RecalculateListSize()
+local baseHeight = q.SearchEnabled and 38 or 0 -- เพิ่มความสูงสำหรับ search box
 local itemCount = #q.FilteredValues
 if itemCount > 10 then
-q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, 392)
+q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, 392 + baseHeight)
 else
-q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, q.UIElements.UIListLayout.AbsoluteContentSize.Y + (n.MenuPadding*2))
+q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, q.UIElements.UIListLayout.AbsoluteContentSize.Y + (n.MenuPadding*2) + baseHeight)
 end
 end
 
@@ -4758,7 +4744,7 @@ s.AbsolutePosition.Y+s.AbsoluteSize.Y-w+n.MenuPadding
 end
 
 function q.Display(s)
-local t=q.Values -- ใช้ค่าเดิมสำหรับการแสดงผล
+local t=q.Values -- ใช้ค่าเดิมสำหรับการแสดงผل
 local u=""
 
 if q.Multi then
@@ -4956,8 +4942,7 @@ task.wait(.1)
 q.Opened=true
 end)
 
--- ไม่ต้อง auto-focus ที่ search box แล้ว
--- เคลียร์การค้นหาเมื่อเปิด (ไม่ต้อง focus)
+-- ไม่ auto-focus เมื่อเปิด แต่เคลียร์การค้นหา
 if q.SearchEnabled then
 local searchInput = q.UIElements.SearchBox.SearchInput
 searchInput.Text = ""
@@ -5019,7 +5004,6 @@ h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",Upd
 
 return q.__type,q
 end
-
 return n end function a.w()
 
 
