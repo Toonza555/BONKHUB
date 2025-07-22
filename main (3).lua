@@ -4992,6 +4992,44 @@ end)
 
 h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",UpdatePosition)
 
+function q.SetValues(s, newValues)
+    q.Values = newValues or {}
+    
+    if q.Multi then
+        local validValues = {}
+        for _, selectedValue in ipairs(q.Value or {}) do
+            for _, availableValue in ipairs(q.Values) do
+                if selectedValue == availableValue then
+                    table.insert(validValues, selectedValue)
+                    break
+                end
+            end
+        end
+        q.Value = validValues
+    else
+        local found = false
+        if q.Value then
+            for _, value in ipairs(q.Values) do
+                if q.Value == value then
+                    found = true
+                    break
+                end
+            end
+        end
+        if not found then
+            q.Value = nil
+        end
+    end
+    
+    FilterValues()
+    q:Refresh(q.FilteredValues)
+    q:Display()
+    
+    RecalculateCanvasSize()
+    RecalculateListSize()
+end
+
+
 return q.__type,q
 end
 
