@@ -4613,13 +4613,13 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
+
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
 	Element.__type = "Dropdown"
 
 	function Element:New(Idx, Config)
-
 		local Dropdown = {
 			Values = Config.Values,
 			Value = Config.Default,
@@ -4629,7 +4629,7 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 			Searchable = Config.Searchable or false,
-			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
+			IsToggling = false
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4700,7 +4700,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local SearchIcon = New("ImageLabel", {
-			Image = "rbxassetid://10734943674", -- Search icon
+			Image = "rbxassetid://10734943674",
 			Size = UDim2.fromOffset(16, 16),
 			Position = UDim2.new(0, 8, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
@@ -4896,11 +4896,8 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- แก้ไข event handler สำหรับ MouseButton1Click
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
-			if Dropdown.IsToggling then
-				return
-			end
+			if Dropdown.IsToggling then return end
 			
 			Dropdown.IsToggling = true
 			
@@ -4910,17 +4907,13 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Open()
 			end
 			
-			-- รอสักครู่แล้วปลด flag
 			task.wait(0.1)
 			Dropdown.IsToggling = false
 		end)
 
-		-- แก้ไข event handler สำหรับ Touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
-				if Dropdown.IsToggling then
-					return
-				end
+				if Dropdown.IsToggling then return end
 				
 				Dropdown.IsToggling = true
 				
@@ -4930,39 +4923,24 @@ ElementsTable.Dropdown = (function()
 					Dropdown:Open()
 				end
 				
-				-- รอสักครู่แล้วปลด flag
 				task.wait(0.1)
 				Dropdown.IsToggling = false
 			end
 		end)
 
-		-- Event สำหรับ SearchBox
 		if Dropdown.Searchable then
 			Creator.AddSignal(SearchBox:GetPropertyChangedSignal("Text"), function()
 				FilterItems(SearchBox.Text)
 			end)
 		end
 
-		-- แก้ไข event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
-				if not Dropdown.Opened then
-					return
-				end
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+				if not Dropdown.Opened then return end
 				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
 				
-				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
-				if
-					Mouse.X < AbsPos.X
-					or Mouse.X > AbsPos.X + AbsSize.X
-					or Mouse.Y < (AbsPos.Y - 20 - 1)
-					or Mouse.Y > AbsPos.Y + AbsSize.Y
-				then
-					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
+				if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
 					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
 					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
 						   Mouse.Y >= ButtonAbsPos.Y and Mouse.Y <= ButtonAbsPos.Y + ButtonAbsSize.Y) then
@@ -4980,7 +4958,6 @@ ElementsTable.Dropdown = (function()
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
 			
-			-- ล้าง search box เมื่อเปิด dropdown
 			if Dropdown.Searchable then
 				SearchBox.Text = ""
 				FilterItems("")
@@ -4988,13 +4965,13 @@ ElementsTable.Dropdown = (function()
 			
 			local openTween = TweenService:Create(
 				DropdownHolderFrame,
-				TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Size = UDim2.fromScale(1, 1) }
 			)
 			
 			local iconTween = TweenService:Create(
 				DropdownIco,
-				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 0 }
 			)
 			
@@ -5012,12 +4989,11 @@ ElementsTable.Dropdown = (function()
 			
 			local iconTween = TweenService:Create(
 				DropdownIco,
-				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Rotation = 180 }
 			)
 			iconTween:Play()
 			
-			-- ปล่อย focus จาก search box
 			if Dropdown.Searchable then
 				SearchBox:ReleaseFocus(false)
 			end
@@ -5044,11 +5020,9 @@ ElementsTable.Dropdown = (function()
 		function Dropdown:GetActiveValues()
 			if Config.Multi then
 				local T = {}
-
 				for Value, Bool in next, Dropdown.Value do
 					table.insert(T, Value)
 				end
-
 				return T
 			else
 				return Dropdown.Value and 1 or 0
@@ -5057,10 +5031,8 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:SetActiveValues(Value)
 			Dropdown.Value = Value
-
 			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
 			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-
 			Dropdown:BuildDropdownList()
 		end
 
@@ -5078,7 +5050,6 @@ ElementsTable.Dropdown = (function()
 
 			for Idx, Value in next, Values do
 				local Table = {}
-
 				Count = Count + 1
 
 				local ButtonSelector = New("Frame", {
@@ -5236,7 +5207,6 @@ ElementsTable.Dropdown = (function()
 			if NewValues then
 				Dropdown.Values = NewValues
 			end
-
 			Dropdown:BuildDropdownList()
 		end
 
@@ -5248,13 +5218,11 @@ ElementsTable.Dropdown = (function()
 		function Dropdown:SetValue(Val)
 			if Dropdown.Multi then
 				local nTable = {}
-
 				for Value, Bool in next, Val do
 					if table.find(Dropdown.Values, Value) then
 						nTable[Value] = true
 					end
 				end
-
 				Dropdown.Value = nTable
 			else
 				if not Val then
@@ -5265,7 +5233,6 @@ ElementsTable.Dropdown = (function()
 			end
 
 			Dropdown:BuildDropdownList()
-
 			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
 			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 		end
