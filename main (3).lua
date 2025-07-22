@@ -3901,7 +3901,7 @@ h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",Upd
 return q.__type,q
 end
 ]]
-
+--[[
 function n.New(o,p)
 local q={
 __type="Dropdown",
@@ -4423,7 +4423,602 @@ h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",Upd
 
 return q.__type,q
 end
+]]
+function n.New(o,p)
+local q={
+__type="Dropdown",
+Title=p.Title or"Dropdown",
+Desc=p.Desc or nil,
+Locked=p.Locked or false,
+Values=p.Values or{},
+MenuWidth=p.MenuWidth or 170,
+Value=p.Value,
+AllowNone=p.AllowNone,
+Multi=p.Multi,
+Callback=p.Callback or function()end,
+SearchEnabled=p.SearchEnabled ~= false, -- เปิดการค้นหาโดยค่าเริ่มต้น
+SearchPlaceholder=p.SearchPlaceholder or "Search...",
 
+UIElements={},
+
+Opened=false,
+Tabs={},
+FilteredValues={}, -- เก็บค่าที่ผ่านการกรอง
+SearchText="" -- ข้อความค้นหา
+}
+
+if q.Multi and not q.Value then
+q.Value={}
+end
+
+-- เริ่มต้นด้วยค่าทั้งหมด
+q.FilteredValues = q.Values
+
+local r=true
+
+q.DropdownFrame=a.load'n'{
+Title=q.Title,
+Desc=q.Desc,
+Parent=p.Parent,
+TextOffset=0,
+Hover=false,
+}
+
+-- Main container for dropdown and search
+q.UIElements.MainContainer=i("Frame",{
+Size=UDim2.new(1,0,0,40),
+BackgroundTransparency=1,
+Parent=q.DropdownFrame.UIElements.Container,
+})
+
+-- Dropdown container
+q.UIElements.DropdownContainer=i("Frame",{
+Size=UDim2.new(q.SearchEnabled and 0.6 or 1, q.SearchEnabled and -5 or 0, 1, 0),
+Position=UDim2.new(0,0,0,0),
+BackgroundTransparency=1,
+Parent=q.UIElements.MainContainer,
+})
+
+q.UIElements.Dropdown=k("",nil,q.UIElements.DropdownContainer)
+
+q.UIElements.Dropdown.Frame.Frame.TextLabel.TextTruncate="AtEnd"
+q.UIElements.Dropdown.Frame.Frame.TextLabel.Size=UDim2.new(1,q.UIElements.Dropdown.Frame.Frame.TextLabel.Size.X.Offset-18-12-12,0,0)
+
+q.UIElements.Dropdown.Size=UDim2.new(1,0,1,0)
+
+i("ImageLabel",{
+Image=h.Icon"chevrons-up-down"[1],
+ImageRectOffset=h.Icon"chevrons-up-down"[2].ImageRectPosition,
+ImageRectSize=h.Icon"chevrons-up-down"[2].ImageRectSize,
+Size=UDim2.new(0,18,0,18),
+Position=UDim2.new(1,-12,0.5,0),
+ThemeTag={
+ImageColor3="Icon"
+},
+AnchorPoint=Vector2.new(1,0.5),
+Parent=q.UIElements.Dropdown.Frame
+})
+
+-- Search and Clear container (ข้างๆ dropdown)
+if q.SearchEnabled then
+q.UIElements.SearchAndClearContainer=i("Frame",{
+Size=UDim2.new(0.4, -5, 1, 0),
+Position=UDim2.new(0.6, 5, 0, 0),
+BackgroundTransparency=1,
+Parent=q.UIElements.MainContainer,
+})
+
+-- Search Box Container
+q.UIElements.SearchContainer=i("Frame",{
+Size=UDim2.new(1, -45, 1, 0),
+Position=UDim2.new(0, 0, 0, 0),
+BackgroundTransparency=1,
+Parent=q.UIElements.SearchAndClearContainer,
+})
+
+-- Search Box Frame
+q.UIElements.SearchBox=i("Frame",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+Parent=q.UIElements.SearchContainer,
+},{
+-- Background
+h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"Squircle",{
+ThemeTag={
+ImageColor3="Background2",
+},
+ImageTransparency=0.05,
+Size=UDim2.new(1,0,1,0),
+}),
+-- TextBox
+i("TextBox",{
+Size=UDim2.new(1,-40,1,-8),
+Position=UDim2.new(0,8,0,4),
+BackgroundTransparency=1,
+Text="",
+PlaceholderText=q.SearchPlaceholder,
+FontFace=Font.new(h.Font,Enum.FontWeight.Regular),
+TextSize=14,
+TextXAlignment="Left",
+ThemeTag={
+TextColor3="Text",
+PlaceholderColor3="TextDark"
+},
+ClearTextOnFocus=false,
+Name="SearchInput"
+})
+})
+
+-- Search Icon
+i("ImageLabel",{
+Image=h.Icon"search"[1],
+ImageRectOffset=h.Icon"search"[2].ImageRectPosition,
+ImageRectSize=h.Icon"search"[2].ImageRectSize,
+Size=UDim2.new(0,16,0,16),
+Position=UDim2.new(1,-12,0.5,0),
+ThemeTag={
+ImageColor3="TextDark"
+},
+AnchorPoint=Vector2.new(1,0.5),
+Parent=q.UIElements.SearchBox
+})
+
+-- Clear List Button
+q.UIElements.ClearButton=i("Frame",{
+Size=UDim2.new(0, 40, 1, 0),
+Position=UDim2.new(1, -40, 0, 0),
+BackgroundTransparency=1,
+Parent=q.UIElements.SearchAndClearContainer,
+},{
+-- Background
+h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"Squircle",{
+ThemeTag={
+ImageColor3="Background2",
+},
+ImageTransparency=0.05,
+Size=UDim2.new(1,0,1,0),
+}),
+})
+
+-- Clear Button Icon (Rotating)
+q.UIElements.ClearIcon=i("ImageLabel",{
+Image=h.Icon"rotate-ccw"[1],
+ImageRectOffset=h.Icon"rotate-ccw"[2].ImageRectPosition,
+ImageRectSize=h.Icon"rotate-ccw"[2].ImageRectSize,
+Size=UDim2.new(0,18,0,18),
+Position=UDim2.new(0.5,0,0.5,0),
+ThemeTag={
+ImageColor3="Icon"
+},
+AnchorPoint=Vector2.new(0.5,0.5),
+Parent=q.UIElements.ClearButton
+})
+
+-- Clear Button Click Handler
+h.AddSignal(q.UIElements.ClearButton.MouseButton1Click, function()
+-- Animate rotation
+j(q.UIElements.ClearIcon, 0.3, {Rotation = q.UIElements.ClearIcon.Rotation + 360}):Play()
+
+-- Clear search
+if q.UIElements.SearchBox.SearchInput then
+q.UIElements.SearchBox.SearchInput.Text = ""
+q:FilterValues("")
+end
+end)
+
+-- Hover effects for Clear Button
+h.AddSignal(q.UIElements.ClearButton.MouseEnter, function()
+j(q.UIElements.ClearButton.Frame, 0.1, {ImageTransparency = 0}):Play()
+end)
+
+h.AddSignal(q.UIElements.ClearButton.MouseLeave, function()
+j(q.UIElements.ClearButton.Frame, 0.1, {ImageTransparency = 0.05}):Play()
+end)
+end
+
+q.UIElements.UIListLayout=i("UIListLayout",{
+Padding=UDim.new(0,n.MenuPadding),
+FillDirection="Vertical"
+})
+
+q.UIElements.Menu=h.NewRoundFrame(n.MenuCorner,"Squircle",{
+ThemeTag={
+ImageColor3="Background",
+},
+ImageTransparency=0.05,
+Size=UDim2.new(1,0,1,0),
+AnchorPoint=Vector2.new(1,0),
+Position=UDim2.new(1,0,0,0),
+},{
+i("UIPadding",{
+PaddingTop=UDim.new(0,n.MenuPadding),
+PaddingLeft=UDim.new(0,n.MenuPadding),
+PaddingRight=UDim.new(0,n.MenuPadding),
+PaddingBottom=UDim.new(0,n.MenuPadding),
+}),
+i("Frame",{
+BackgroundTransparency=1,
+Size=UDim2.new(1,0,1,0),
+ClipsDescendants=true
+},{
+i("UICorner",{
+CornerRadius=UDim.new(0,n.MenuCorner-n.MenuPadding),
+}),
+i("Frame",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+Name="ContentFrame"
+},{
+i("UIListLayout",{
+Padding=UDim.new(0,0),
+FillDirection="Vertical"
+}),
+i("ScrollingFrame",{
+Size=UDim2.new(1,0,1,0),
+ScrollBarThickness=0,
+ScrollingDirection="Y",
+AutomaticCanvasSize="Y",
+CanvasSize=UDim2.new(0,0,0,0),
+BackgroundTransparency=1,
+ScrollBarImageTransparency=1,
+Name="ItemsScrollFrame"
+},{
+q.UIElements.UIListLayout,
+})
+})
+})
+})
+
+q.UIElements.MenuCanvas=i("Frame",{
+Size=UDim2.new(0,q.MenuWidth,0,300),
+BackgroundTransparency=1,
+Position=UDim2.new(-10,0,-10,0),
+Visible=false,
+Active=false,
+Parent=p.WindUI.DropdownGui,
+AnchorPoint=Vector2.new(1,0),
+},{
+q.UIElements.Menu,
+i("UISizeConstraint",{
+MinSize=Vector2.new(170,0)
+})
+})
+
+-- ฟังก์ชันค้นหา
+function q.FilterValues(s, searchText)
+q.SearchText = searchText or ""
+if q.SearchText == "" then
+q.FilteredValues = q.Values
+else
+q.FilteredValues = {}
+local lowerSearch = string.lower(q.SearchText)
+for _, value in ipairs(q.Values) do
+if string.find(string.lower(value), lowerSearch, 1, true) then
+table.insert(q.FilteredValues, value)
+end
+end
+end
+q:Refresh(q.FilteredValues)
+end
+
+-- เชื่อมต่อ search box event
+if q.SearchEnabled then
+local searchInput = q.UIElements.SearchBox.SearchInput
+h.AddSignal(searchInput:GetPropertyChangedSignal("Text"), function()
+q:FilterValues(searchInput.Text)
+end)
+end
+
+function q.Lock(s)
+r=false
+return q.DropdownFrame:Lock()
+end
+
+function q.Unlock(s)
+r=true
+return q.DropdownFrame:Unlock()
+end
+
+if q.Locked then
+q:Lock()
+end
+
+local function RecalculateCanvasSize()
+local scrollFrame = q.UIElements.Menu.Frame.ContentFrame.ItemsScrollFrame
+scrollFrame.CanvasSize=UDim2.fromOffset(0,q.UIElements.UIListLayout.AbsoluteContentSize.Y)
+end
+
+local function RecalculateListSize()
+local itemCount = #q.FilteredValues
+if itemCount > 10 then
+q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, 392)
+else
+q.UIElements.MenuCanvas.Size=UDim2.fromOffset(q.UIElements.MenuCanvas.AbsoluteSize.X, q.UIElements.UIListLayout.AbsoluteContentSize.Y + (n.MenuPadding*2))
+end
+end
+
+function UpdatePosition()
+local s=q.UIElements.Dropdown
+local t=q.UIElements.MenuCanvas
+
+local u=g.ViewportSize.Y-(s.AbsolutePosition.Y+s.AbsoluteSize.Y)-n.MenuPadding-54
+local v=t.AbsoluteSize.Y+n.MenuPadding
+
+local w=-54
+if u<v then
+w=v-u-54
+end
+
+t.Position=UDim2.new(
+0,
+s.AbsolutePosition.X+s.AbsoluteSize.X,
+0,
+s.AbsolutePosition.Y+s.AbsoluteSize.Y-w+n.MenuPadding
+)
+end
+
+function q.Display(s)
+local t=q.Values -- ใช้ค่าเดิมสำหรับการแสดงผล
+local u=""
+
+if q.Multi then
+for v,w in next,t do
+if table.find(q.Value,w)then
+u=u..w..", "
+end
+end
+u=u:sub(1,#u-2)
+else
+u=q.Value or""
+end
+
+q.UIElements.Dropdown.Frame.Frame.TextLabel.Text=(u==""and"--"or u)
+end
+
+function q.Refresh(s,t)
+local scrollFrame = q.UIElements.Menu.Frame.ContentFrame.ItemsScrollFrame
+for u,v in next,scrollFrame:GetChildren()do
+if not v:IsA"UIListLayout"then
+v:Destroy()
+end
+end
+
+q.Tabs={}
+
+for w,x in next,t do
+local y={
+Name=x,
+Selected=false,
+UIElements={},
+}
+
+y.UIElements.TabItem=h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"Squircle",{
+Size=UDim2.new(1,0,0,34),
+ImageTransparency=1,
+Parent=scrollFrame,
+ImageColor3=Color3.new(1,1,1),
+},{
+h.NewRoundFrame(n.MenuCorner-n.MenuPadding,"SquircleOutline",{
+Size=UDim2.new(1,0,1,0),
+ImageColor3=Color3.new(1,1,1),
+ImageTransparency=1,
+Name="Highlight",
+},{
+i("UIGradient",{
+Rotation=80,
+Color=ColorSequence.new{
+ColorSequenceKeypoint.new(0.0,Color3.fromRGB(255,255,255)),
+ColorSequenceKeypoint.new(0.5,Color3.fromRGB(255,255,255)),
+ColorSequenceKeypoint.new(1.0,Color3.fromRGB(255,255,255)),
+},
+Transparency=NumberSequence.new{
+NumberSequenceKeypoint.new(0.0,0.1),
+NumberSequenceKeypoint.new(0.5,1),
+NumberSequenceKeypoint.new(1.0,0.1),
+}
+}),
+}),
+i("Frame",{
+Size=UDim2.new(1,0,1,0),
+BackgroundTransparency=1,
+},{
+i("UIPadding",{
+PaddingLeft=UDim.new(0,n.TabPadding),
+PaddingRight=UDim.new(0,n.TabPadding),
+}),
+i("UICorner",{
+CornerRadius=UDim.new(0,n.MenuCorner-n.MenuPadding)
+}),
+i("TextLabel",{
+Text=x,
+TextXAlignment="Left",
+FontFace=Font.new(h.Font,Enum.FontWeight.Regular),
+ThemeTag={
+TextColor3="Text",
+BackgroundColor3="Text"
+},
+TextSize=15,
+BackgroundTransparency=1,
+TextTransparency=.4,
+AutomaticSize="Y",
+Size=UDim2.new(1,0,0,0),
+AnchorPoint=Vector2.new(0,0.5),
+Position=UDim2.new(0,0,0.5,0),
+})
+})
+},true)
+
+if q.Multi then
+y.Selected=table.find(q.Value or{},y.Name)
+else
+y.Selected=q.Value==y.Name
+end
+
+if y.Selected then
+y.UIElements.TabItem.ImageTransparency=.95
+y.UIElements.TabItem.Highlight.ImageTransparency=.75
+y.UIElements.TabItem.Frame.TextLabel.TextTransparency=0.05
+end
+
+q.Tabs[w]=y
+q:Display()
+
+local function Callback()
+q:Display()
+task.spawn(function()
+h.SafeCallback(q.Callback,q.Value)
+end)
+end
+
+h.AddSignal(y.UIElements.TabItem.MouseButton1Click,function()
+if q.Multi then
+if not y.Selected then
+y.Selected=true
+j(y.UIElements.TabItem,0.1,{ImageTransparency=.95}):Play()
+j(y.UIElements.TabItem.Highlight,0.1,{ImageTransparency=.75}):Play()
+j(y.UIElements.TabItem.Frame.TextLabel,0.1,{TextTransparency=0}):Play()
+table.insert(q.Value,y.Name)
+else
+if not q.AllowNone and#q.Value==1 then
+return
+end
+y.Selected=false
+j(y.UIElements.TabItem,0.1,{ImageTransparency=1}):Play()
+j(y.UIElements.TabItem.Highlight,0.1,{ImageTransparency=1}):Play()
+j(y.UIElements.TabItem.Frame.TextLabel,0.1,{TextTransparency=.4}):Play()
+for z,A in ipairs(q.Value)do
+if A==y.Name then
+table.remove(q.Value,z)
+break
+end
+end
+end
+else
+for z,A in next,q.Tabs do
+j(A.UIElements.TabItem,0.1,{ImageTransparency=1}):Play()
+j(A.UIElements.TabItem.Highlight,0.1,{ImageTransparency=1}):Play()
+j(A.UIElements.TabItem.Frame.TextLabel,0.1,{TextTransparency=.5}):Play()
+A.Selected=false
+end
+y.Selected=true
+j(y.UIElements.TabItem,0.1,{ImageTransparency=.95}):Play()
+j(y.UIElements.TabItem.Highlight,0.1,{ImageTransparency=.75}):Play()
+j(y.UIElements.TabItem.Frame.TextLabel,0.1,{TextTransparency=0.05}):Play()
+q.Value=y.Name
+end
+Callback()
+end)
+
+RecalculateCanvasSize()
+RecalculateListSize()
+end
+
+local y=0
+for z,A in next,q.Tabs do
+if A.UIElements.TabItem.Frame.TextLabel then
+local B=A.UIElements.TabItem.Frame.TextLabel.TextBounds.X
+y=math.max(y,B)
+end
+end
+
+q.UIElements.MenuCanvas.Size=UDim2.new(0,y+6+6+5+5+18+6+6,q.UIElements.MenuCanvas.Size.Y.Scale,q.UIElements.MenuCanvas.Size.Y.Offset)
+end
+
+q:Refresh(q.FilteredValues)
+
+function q.Select(s,t)
+if t then
+q.Value=t
+else
+if q.Multi then
+q.Value={}
+else
+q.Value=nil
+end
+end
+q:Refresh(q.FilteredValues)
+end
+
+RecalculateListSize()
+
+function q.Open(s)
+if r then
+q.UIElements.Menu.Visible=true
+q.UIElements.MenuCanvas.Visible=true
+q.UIElements.MenuCanvas.Active=true
+q.UIElements.Menu.Size=UDim2.new(1,0,0,0)
+j(q.UIElements.Menu,0.1,{
+Size=UDim2.new(1,0,1,0)
+},Enum.EasingStyle.Quart,Enum.EasingDirection.Out):Play()
+
+task.spawn(function()
+task.wait(.1)
+q.Opened=true
+end)
+
+-- ไม่ต้อง auto-focus ที่ search box แล้ว
+-- เคลียร์การค้นหาเมื่อเปิด (ไม่ต้อง focus)
+if q.SearchEnabled then
+local searchInput = q.UIElements.SearchBox.SearchInput
+searchInput.Text = ""
+q:FilterValues("")
+end
+
+UpdatePosition()
+end
+end
+
+function q.Close(s)
+q.Opened=false
+j(q.UIElements.Menu,0.25,{
+Size=UDim2.new(1,0,0,0)
+},Enum.EasingStyle.Quart,Enum.EasingDirection.Out):Play()
+
+task.spawn(function()
+task.wait(.2)
+q.UIElements.Menu.Visible=false
+end)
+
+task.spawn(function()
+task.wait(.25)
+q.UIElements.MenuCanvas.Visible=false
+q.UIElements.MenuCanvas.Active=false
+end)
+
+-- เคลียร์การค้นหาเมื่อปิด
+if q.SearchEnabled then
+q:FilterValues("")
+end
+end
+
+h.AddSignal(q.UIElements.Dropdown.MouseButton1Click,function()
+q:Open()
+end)
+
+h.AddSignal(b.InputBegan,function(s)
+if
+s.UserInputType==Enum.UserInputType.MouseButton1
+or s.UserInputType==Enum.UserInputType.Touch
+then
+local t,v=q.UIElements.MenuCanvas.AbsolutePosition,q.UIElements.MenuCanvas.AbsoluteSize
+if
+p.Window.CanDropdown
+and q.Opened
+and(e.X<t.X
+or e.X>t.X+v.X
+or e.Y<(t.Y-20-1)
+or e.Y>t.Y+v.Y
+)
+then
+q:Close()
+end
+end
+end)
+
+h.AddSignal(q.UIElements.Dropdown:GetPropertyChangedSignal"AbsolutePosition",UpdatePosition)
+
+return q.__type,q
+end
 
 return n end function a.w()
 
