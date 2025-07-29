@@ -7510,6 +7510,7 @@ local InterfaceManager = {} do
 			Description = "Changes the interface theme.",
 			Values = Library.Themes,
 			Default = self.Library.Theme,
+			Searchable = true,
 			Callback = function(Value)
 				Library:SetTheme(Value)
 				Settings.Theme = Value
