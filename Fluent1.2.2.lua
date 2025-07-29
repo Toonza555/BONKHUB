@@ -4514,7 +4514,7 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
-
+task.spawn(function()
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -5119,7 +5119,9 @@ ElementsTable.Dropdown = (function()
     				Dropdown:Display()
     
     				Buttons[Button] = Table
-    				wait()
+    				if Count % 10 == 0 then -- yield ทุก 10 items แทน
+                        task.wait()
+                    end
     			end
     
     			ListSizeX = 0
@@ -5225,7 +5227,7 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
-
+end)
 
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
