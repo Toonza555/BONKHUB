@@ -4797,7 +4797,6 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- แก้ไข event handler สำหรับ MouseButton1Click
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.IsToggling then
 				return
@@ -4811,12 +4810,10 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Open()
 			end
 			
-			-- รอสักครู่แล้วปลด flag
 			task.wait(0.1)
 			Dropdown.IsToggling = false
 		end)
 
-		-- แก้ไข event handler สำหรับ Touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
 				if Dropdown.IsToggling then
@@ -4976,7 +4973,7 @@ ElementsTable.Dropdown = (function()
 			end
 
 			local Count = 0
-
+            task.spawn(function()
 			for Idx, Value in next, Values do
 				local Table = {}
 
@@ -5117,7 +5114,9 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Display()
 
 				Buttons[Button] = Table
+				task.wait(.1)
 			end
+			end)
 
 			ListSizeX = 0
 			for Button, Table in next, Buttons do
