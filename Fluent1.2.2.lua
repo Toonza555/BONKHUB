@@ -4514,7 +4514,6 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
-task.spawn(function()
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4977,7 +4976,7 @@ ElementsTable.Dropdown = (function()
 			end
 
 			local Count = 0
-
+            task.spawn(function()
 			for Idx, Value in next, Values do
 				local Table = {}
 
@@ -5120,7 +5119,7 @@ ElementsTable.Dropdown = (function()
 				Buttons[Button] = Table
 				task.wait()
 			end
-
+            end)
 			ListSizeX = 0
 			for Button, Table in next, Buttons do
 				if Button.ButtonLabel then
@@ -5223,7 +5222,6 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
-end)
 
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
