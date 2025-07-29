@@ -5114,7 +5114,6 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Display()
 
 				Buttons[Button] = Table
-				task.wait(.1)
 			end
 			end)
 
@@ -7474,30 +7473,7 @@ local InterfaceManager = {} do
 		local InterfaceTheme = section:AddDropdown("InterfaceTheme", {
 			Title = "Theme",
 			Description = "Changes the interface theme.",
-			Values  = {
-        	    "Verdant",
-        		"Dark",
-        		"Darker", 
-        		"AMOLED",
-        		"Light",
-        		"Balloon",
-        		"SoftCream",
-        		"Aqua", 
-        		"Amethyst",
-        		"Rose",
-        		"Midnight",
-        		"Forest",
-        		"Sunset", 
-        		"Ocean",
-        		"Emerald",
-        		"Sapphire",
-        		"Cloud",
-        		"Grape",
-        		"Bloody",
-        		"Arctic",
-                "Navy",
-                "CandySunset"
-			},
+			Values = Library.Themes,
 			Default = self.Library.Theme,
 			Callback = function(Value)
 				Library:SetTheme(Value)
