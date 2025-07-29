@@ -5117,7 +5117,7 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Display()
 
 				Buttons[Button] = Table
-				task.wait()
+				task.wait(.1)
 			end
             end)
 			ListSizeX = 0
