@@ -4621,7 +4621,7 @@ ElementsTable.Dropdown = (function()
 			TextSize = 13,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = Config.Multi and UDim2.new(1, -70, 1, 0) or UDim2.new(1, -32, 1, 0),
+			Size = UDim2.new(1, -70, 1, 0),
 			Position = UDim2.new(0, 28, 0, 0),
 			BackgroundTransparency = 1,
 			ClearTextOnFocus = false,
@@ -4641,7 +4641,6 @@ ElementsTable.Dropdown = (function()
 			AnchorPoint = Vector2.new(0, 0.5),
 			BackgroundColor3 = Color3.fromRGB(60, 30, 30),
 			BackgroundTransparency = 0.3,
-			Visible = Config.Multi or false,
 			ThemeTag = {
 				TextColor3 = "Text",
 				BackgroundColor3 = "DropdownFrame",
@@ -4723,12 +4722,15 @@ ElementsTable.Dropdown = (function()
 		Creator.AddSignal(ClearButton.MouseButton1Click, function()
 			if Config.Multi then
 				Dropdown.Value = {}
-				Dropdown:BuildDropdownList()
-				Dropdown:Display()
-				
-				Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-				Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+			else
+				Dropdown.Value = nil
 			end
+			
+			Dropdown:BuildDropdownList()
+			Dropdown:Display()
+			
+			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 		end)
 
 		local DropdownListLayout = New("UIListLayout", {
