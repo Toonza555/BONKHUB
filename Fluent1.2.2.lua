@@ -4615,7 +4615,7 @@ ElementsTable.Dropdown = (function()
 		local ClearIcon = New("ImageLabel", {
 			Image = "rbxassetid://10747384394",
 			Size = UDim2.fromOffset(14, 14),
-			Position = UDim2.new(1, -24, 0.5, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundTransparency = 1,
 			ImageColor3 = Color3.fromRGB(200, 100, 100),
@@ -4625,15 +4625,14 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local ClearButton = New("TextButton", {
-			Size = UDim2.fromOffset(20, 20),
-			Position = UDim2.new(1, -30, 0.5, 0),
-			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.new(0, 0, 0, 0),
 			BackgroundTransparency = 1,
 			Text = "",
 		}, {
 			ClearIcon,
 			New("UICorner", {
-				CornerRadius = UDim.new(0, 4),
+				CornerRadius = UDim.new(0, 6),
 			}),
 		})
 
@@ -4646,7 +4645,7 @@ ElementsTable.Dropdown = (function()
 			TextSize = 13,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, -60, 1, 0),
+			Size = UDim2.new(1, -32, 1, 0),
 			Position = UDim2.new(0, 28, 0, 0),
 			BackgroundTransparency = 1,
 			ClearTextOnFocus = false,
@@ -4657,7 +4656,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local SearchContainer = New("Frame", {
-			Size = UDim2.new(1, -10, 0, 32),
+			Size = UDim2.new(1, (Dropdown.Searchable and Config.Multi) and -50 or -10, 0, 32),
 			Position = UDim2.fromOffset(5, 5),
 			BackgroundColor3 = Color3.fromRGB(35, 35, 35),
 			BackgroundTransparency = 0.1,
@@ -4686,12 +4685,43 @@ ElementsTable.Dropdown = (function()
 			}),
 			SearchIcon,
 			SearchBox,
+		})
+
+		local ClearContainer = New("Frame", {
+			Size = UDim2.fromOffset(35, 32),
+			Position = UDim2.new(1, -40, 0, 5),
+			BackgroundColor3 = Color3.fromRGB(60, 35, 35),
+			BackgroundTransparency = 0.1,
+			Visible = Dropdown.Searchable and Config.Multi,
+			ThemeTag = {
+				BackgroundColor3 = "DropdownHolder",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			New("UIStroke", {
+				Transparency = 0.6,
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Color3.fromRGB(100, 70, 70),
+				ThemeTag = {
+					Color = "InElementBorder",
+				},
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 45, 45)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 35, 35))
+				},
+				Rotation = 90,
+			}),
 			ClearButton,
 		})
 
 		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
-		local ClearMotor, SetClearTransparency = Creator.SpringMotor(1, ClearButton, "BackgroundTransparency")
+		local ClearMotor, SetClearTransparency = Creator.SpringMotor(0.1, ClearContainer, "BackgroundTransparency")
+		local ClearStrokeMotor, SetClearStrokeTransparency = Creator.SpringMotor(0.6, ClearContainer.UIStroke, "Transparency")
 
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
 			SetSearchTransparency(0.05)
@@ -4717,12 +4747,14 @@ ElementsTable.Dropdown = (function()
 			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
 		end)
 
-		Creator.AddSignal(ClearButton.MouseEnter, function()
-			SetClearTransparency(0.8)
+		Creator.AddSignal(ClearContainer.MouseEnter, function()
+			SetClearTransparency(0.05)
+			SetClearStrokeTransparency(0.4)
 		end)
 
-		Creator.AddSignal(ClearButton.MouseLeave, function()
-			SetClearTransparency(1)
+		Creator.AddSignal(ClearContainer.MouseLeave, function()
+			SetClearTransparency(0.1)
+			SetClearStrokeTransparency(0.6)
 		end)
 
 		Creator.AddSignal(ClearButton.MouseButton1Click, function()
@@ -4767,6 +4799,7 @@ ElementsTable.Dropdown = (function()
 			},
 		}, {
 			SearchContainer,
+			ClearContainer,
 			DropdownScrollFrame,
 			New("UICorner", {
 				CornerRadius = UDim.new(0, 8),
