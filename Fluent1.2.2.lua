@@ -4966,32 +4966,25 @@ ElementsTable.Dropdown = (function()
 				end
 			end
 
-			-- ถ้า list เยอะมาก (>100) ให้โหลดแบบ lazy
+			-- ถ้า list เยอะมาก ให้โหลดแค่ 50 อันแรก แล้วโหลดเพิ่มแบบ instant
 			local totalItems = #Values
-			local maxInitialLoad = 100 -- โหลดแค่ 100 อันแรก
-			local loadLimit = math.min(totalItems, maxInitialLoad)
+			local maxInitialLoad = math.min(50, totalItems) -- ลดเหลือ 50
 			
-			-- สร้าง buttons แค่ส่วนแรก
-			for i = 1, loadLimit do
+			-- สร้าง buttons แค่ส่วนแรก (ไม่มี loop delay)
+			for i = 1, maxInitialLoad do
 				local Value = Values[i]
 				local Button, Table = self:CreateButton(Value, Buttons)
 				Buttons[Button] = Table
 			end
 
-			-- ถ้ายังมีเหลือ ให้โหลดเมื่อ scroll
+			-- ถ้ายังมีเหลือ ให้โหลดเพิ่มแบบ background
 			if totalItems > maxInitialLoad then
 				local loadedCount = maxInitialLoad
-				local isLoading = false
 				
-				Creator.AddSignal(DropdownScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
-					local scrollPercent = DropdownScrollFrame.CanvasPosition.Y / (DropdownScrollFrame.CanvasSize.Y.Offset - DropdownScrollFrame.AbsoluteSize.Y)
-					
-					-- เมื่อ scroll ถึง 80% แล้วให้โหลดเพิ่ม
-					if scrollPercent > 0.8 and not isLoading and loadedCount < totalItems then
-						isLoading = true
-						
-						-- โหลดเพิ่มอีก 50 items
-						local nextBatch = math.min(50, totalItems - loadedCount)
+				-- โหลดส่วนที่เหลือแบบ background ทีละ 25 items
+				task.spawn(function()
+					while loadedCount < totalItems do
+						local nextBatch = math.min(25, totalItems - loadedCount)
 						for i = loadedCount + 1, loadedCount + nextBatch do
 							local Value = Values[i]
 							local Button, Table = self:CreateButton(Value, Buttons)
@@ -5000,71 +4993,38 @@ ElementsTable.Dropdown = (function()
 						
 						loadedCount = loadedCount + nextBatch
 						RecalculateCanvasSize()
-						RecalculateListSize()
 						
-						task.wait(0.1) -- ป้องกันการโหลดซ้ำเร็วเกินไป
-						isLoading = false
+						-- รอแค่ 1 frame
+						task.wait()
 					end
+					RecalculateListSize()
 				end)
 			end
 
-			-- คำนวณขนาด
-			ListSizeX = 0
-			for Button, Table in next, Buttons do
-				if Button.ButtonLabel then
-					if Button.ButtonLabel.TextBounds.X > ListSizeX then
-						ListSizeX = Button.ButtonLabel.TextBounds.X
-					end
-				end
-			end
-			ListSizeX = ListSizeX + 30
-
+			-- คำนวณขนาดเบื้องต้น
+			self:CalculateSize(Buttons)
 			RecalculateCanvasSize()
 			RecalculateListSize()
 		end
 
-		-- แยกฟังก์ชันสร้าง button ออกมา
+		-- แยกฟังก์ชันคำนวณขนาดออกมา
+		function Dropdown:CalculateSize(Buttons)
+			ListSizeX = 170 -- ขนาดเริ่มต้น
+			for Button, Table in next, Buttons do
+				if Button.ButtonLabel then
+					local textSize = Button.ButtonLabel.TextBounds.X
+					if textSize > ListSizeX - 30 then
+						ListSizeX = textSize + 30
+					end
+				end
+			end
+		end
+
+		-- ปรับปรุงฟังก์ชันสร้าง button ให้เรียบง่ายขึ้น
 		function Dropdown:CreateButton(Value, Buttons)
 			local Table = {}
 
-			local ButtonSelector = New("Frame", {
-				Size = UDim2.fromOffset(4, 14),
-				BackgroundColor3 = Color3.fromRGB(100, 150, 255),
-				Position = UDim2.fromOffset(-1, 16),
-				AnchorPoint = Vector2.new(0, 0.5),
-				ThemeTag = {
-					BackgroundColor3 = "Accent",
-				},
-			}, {
-				New("UICorner", {
-					CornerRadius = UDim.new(0, 2),
-				}),
-				New("UIGradient", {
-					Color = ColorSequence.new{
-						ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 170, 255)),
-						ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 130, 255))
-					},
-					Rotation = 90,
-				}),
-			})
-
-			local ButtonLabel = New("TextLabel", {
-				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
-				Text = Value,
-				TextColor3 = Color3.fromRGB(200, 200, 200),
-				TextSize = 13,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(1, 1),
-				Position = UDim2.fromOffset(10, 0),
-				Name = "ButtonLabel",
-				ThemeTag = {
-					TextColor3 = "Text",
-				},
-			})
-
+			-- สร้าง UI elements แบบ minimal
 			local Button = New("TextButton", {
 				Size = UDim2.new(1, -5, 0, 32),
 				BackgroundTransparency = 1,
@@ -5074,87 +5034,105 @@ ElementsTable.Dropdown = (function()
 				ThemeTag = {
 					BackgroundColor3 = "DropdownOption",
 				},
+			})
+
+			local ButtonSelector = New("Frame", {
+				Size = UDim2.fromOffset(4, 6),
+				BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+				Position = UDim2.fromOffset(-1, 16),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Parent = Button,
+				ThemeTag = {
+					BackgroundColor3 = "Accent",
+				},
 			}, {
-				ButtonSelector,
-				ButtonLabel,
 				New("UICorner", {
-					CornerRadius = UDim.new(0, 6),
-				}),
-				New("UIGradient", {
-					Color = ColorSequence.new{
-						ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-						ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
-					},
-					Rotation = 90,
+					CornerRadius = UDim.new(0, 2),
 				}),
 			})
 
-			local Selected
-			if Config.Multi then
-				Selected = Dropdown.Value[Value]
-			else
-				Selected = Dropdown.Value == Value
-			end
+			local ButtonLabel = New("TextLabel", {
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+				Text = Value,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				Position = UDim2.fromOffset(10, 0),
+				Name = "ButtonLabel",
+				Parent = Button,
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			})
 
-			local BackMotor, SetBackTransparency = Creator.SpringMotor(1, Button, "BackgroundTransparency")
-			local SelMotor, SetSelTransparency = Creator.SpringMotor(1, ButtonSelector, "BackgroundTransparency")
-			local SelectorSizeMotor = Flipper.SingleMotor.new(6)
+			-- เพิ่ม styling
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+				Parent = Button,
+			})
 
-			SelectorSizeMotor:onStep(function(value)
-				ButtonSelector.Size = UDim2.new(0, 4, 0, value)
+			local Selected = Config.Multi and Dropdown.Value[Value] or (Dropdown.Value == Value)
+
+			-- ใช้ TweenService แทน SpringMotor เพื่อความเร็ว
+			local currentTransparency = Selected and 0.86 or 1
+			Button.BackgroundTransparency = currentTransparency
+			ButtonSelector.BackgroundTransparency = Selected and 0 or 1
+			ButtonSelector.Size = Selected and UDim2.fromOffset(4, 14) or UDim2.fromOffset(4, 6)
+
+			-- Event handlers
+			Button.MouseEnter:Connect(function()
+				TweenService:Create(Button, TweenInfo.new(0.1), {
+					BackgroundTransparency = Selected and 0.82 or 0.86
+				}):Play()
 			end)
 
-			Creator.AddSignal(Button.MouseEnter, function()
-				SetBackTransparency(Selected and 0.82 or 0.86)
-			end)
-			Creator.AddSignal(Button.MouseLeave, function()
-				SetBackTransparency(Selected and 0.86 or 1)
-			end)
-			Creator.AddSignal(Button.MouseButton1Down, function()
-				SetBackTransparency(0.90)
-			end)
-			Creator.AddSignal(Button.MouseButton1Up, function()
-				SetBackTransparency(Selected and 0.82 or 0.86)
+			Button.MouseLeave:Connect(function()
+				TweenService:Create(Button, TweenInfo.new(0.1), {
+					BackgroundTransparency = Selected and 0.86 or 1
+				}):Play()
 			end)
 
 			function Table:UpdateButton()
 				if Config.Multi then
 					Selected = Dropdown.Value[Value]
-					if Selected then
-						SetBackTransparency(0.86)
-					end
 				else
 					Selected = Dropdown.Value == Value
-					SetBackTransparency(Selected and 0.86 or 1)
 				end
 
-				SelectorSizeMotor:setGoal(Flipper.Spring.new(Selected and 14 or 6, { frequency = 6 }))
-				SetSelTransparency(Selected and 0 or 1)
+				Button.BackgroundTransparency = Selected and 0.86 or 1
+				ButtonSelector.BackgroundTransparency = Selected and 0 or 1
+				
+				TweenService:Create(ButtonSelector, TweenInfo.new(0.2), {
+					Size = Selected and UDim2.fromOffset(4, 14) or UDim2.fromOffset(4, 6)
+				}):Play()
 			end
 
-			AddSignal(Button.Activated, function()
+			Button.Activated:Connect(function()
 				local Try = not Selected
 
 				if Dropdown:GetActiveValues() == 1 and not Try and not Config.AllowNull then
-				else
-					if Config.Multi then
-						Selected = Try
-						Dropdown.Value[Value] = Selected and true or nil
-					else
-						Selected = Try
-						Dropdown.Value = Selected and Value or nil
-
-						for _, OtherButton in next, Buttons do
-							OtherButton:UpdateButton()
-						end
-					end
-
-					Table:UpdateButton()
-					Dropdown:Display()
-
-					Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-					Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+					return
 				end
+
+				if Config.Multi then
+					Selected = Try
+					Dropdown.Value[Value] = Selected and true or nil
+				else
+					Selected = Try
+					Dropdown.Value = Selected and Value or nil
+
+					for _, OtherButton in next, Buttons do
+						OtherButton:UpdateButton()
+					end
+				end
+
+				Table:UpdateButton()
+				Dropdown:Display()
+
+				Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+				Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 			end)
 
 			Table:UpdateButton()
@@ -5250,6 +5228,7 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
+
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
 	Paragraph.__index = Paragraph
