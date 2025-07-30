@@ -4514,7 +4514,6 @@ ElementsTable.Toggle = (function()
 	return Element
 end)()
 
-
 ElementsTable.Dropdown = (function()
 	local Element = {}
 	Element.__index = Element
@@ -4531,7 +4530,7 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 			Searchable = Config.Searchable or false,
-			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
+			IsToggling = false
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4602,7 +4601,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local SearchIcon = New("ImageLabel", {
-			Image = "rbxassetid://10734943674", -- Search icon
+			Image = "rbxassetid://10734943674",
 			Size = UDim2.fromOffset(16, 16),
 			Position = UDim2.new(0, 8, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
@@ -4611,6 +4610,30 @@ ElementsTable.Dropdown = (function()
 			ThemeTag = {
 				ImageColor3 = "SubText",
 			},
+		})
+
+		local ClearIcon = New("ImageLabel", {
+			Image = "rbxassetid://10747384394",
+			Size = UDim2.fromOffset(14, 14),
+			Position = UDim2.new(0.5, 0, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			ImageColor3 = Color3.fromRGB(200, 100, 100),
+			ThemeTag = {
+				ImageColor3 = "Error",
+			},
+		})
+
+		local ClearButton = New("TextButton", {
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.new(0, 0, 0, 0),
+			BackgroundTransparency = 1,
+			Text = "",
+		}, {
+			ClearIcon,
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
 		})
 
 		local SearchBox = New("TextBox", {
@@ -4633,7 +4656,7 @@ ElementsTable.Dropdown = (function()
 		})
 
 		local SearchContainer = New("Frame", {
-			Size = UDim2.new(1, -10, 0, 32),
+			Size = UDim2.new(1, (Dropdown.Searchable and Config.Multi) and -50 or -10, 0, 32),
 			Position = UDim2.fromOffset(5, 5),
 			BackgroundColor3 = Color3.fromRGB(35, 35, 35),
 			BackgroundTransparency = 0.1,
@@ -4664,8 +4687,41 @@ ElementsTable.Dropdown = (function()
 			SearchBox,
 		})
 
+		local ClearContainer = New("Frame", {
+			Size = UDim2.fromOffset(35, 32),
+			Position = UDim2.new(1, -40, 0, 5),
+			BackgroundColor3 = Color3.fromRGB(60, 35, 35),
+			BackgroundTransparency = 0.1,
+			Visible = Dropdown.Searchable and Config.Multi,
+			ThemeTag = {
+				BackgroundColor3 = "DropdownHolder",
+			},
+		}, {
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 6),
+			}),
+			New("UIStroke", {
+				Transparency = 0.6,
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = Color3.fromRGB(100, 70, 70),
+				ThemeTag = {
+					Color = "InElementBorder",
+				},
+			}),
+			New("UIGradient", {
+				Color = ColorSequence.new{
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 45, 45)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 35, 35))
+				},
+				Rotation = 90,
+			}),
+			ClearButton,
+		})
+
 		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
+		local ClearMotor, SetClearTransparency = Creator.SpringMotor(0.1, ClearContainer, "BackgroundTransparency")
+		local ClearStrokeMotor, SetClearStrokeTransparency = Creator.SpringMotor(0.6, ClearContainer.UIStroke, "Transparency")
 
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
 			SetSearchTransparency(0.05)
@@ -4689,6 +4745,30 @@ ElementsTable.Dropdown = (function()
 			SetSearchTransparency(0.1)
 			SetSearchStrokeTransparency(0.6)
 			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
+		end)
+
+		Creator.AddSignal(ClearContainer.MouseEnter, function()
+			SetClearTransparency(0.05)
+			SetClearStrokeTransparency(0.4)
+		end)
+
+		Creator.AddSignal(ClearContainer.MouseLeave, function()
+			SetClearTransparency(0.1)
+			SetClearStrokeTransparency(0.6)
+		end)
+
+		Creator.AddSignal(ClearButton.MouseButton1Click, function()
+			if Config.Multi then
+				Dropdown.Value = {}
+			else
+				Dropdown.Value = nil
+			end
+			
+			Dropdown:BuildDropdownList()
+			Dropdown:Display()
+			
+			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 		end)
 
 		local DropdownListLayout = New("UIListLayout", {
@@ -4719,6 +4799,7 @@ ElementsTable.Dropdown = (function()
 			},
 		}, {
 			SearchContainer,
+			ClearContainer,
 			DropdownScrollFrame,
 			New("UICorner", {
 				CornerRadius = UDim.new(0, 8),
@@ -4780,7 +4861,21 @@ ElementsTable.Dropdown = (function()
 			DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0, DropdownListLayout.AbsoluteContentSize.Y)
 		end
 
+		local totalItems = 0
+		local loadedCount = 0
+		local allButtons = {}
+
 		local function FilterItems(searchText)
+			-- ถ้ายังโหลดไม่ครบและมีการค้นหา ให้โหลดทั้งหมดเลย
+			if loadedCount < totalItems and searchText ~= "" then
+				for i = loadedCount + 1, totalItems do
+					local Value = Dropdown.Values[i]
+					local Button, Table = Dropdown:CreateButton(Value, allButtons)
+					allButtons[Button] = Table
+				end
+				loadedCount = totalItems
+			end
+
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
 				if not Element:IsA("UIListLayout") then
 					local Value = Element.ButtonLabel.Text
@@ -4788,7 +4883,7 @@ ElementsTable.Dropdown = (function()
 					Element.Visible = shouldShow
 				end
 			end
-			
+        
 			RecalculateCanvasSize()
 			RecalculateListSize()
 		end
@@ -4798,7 +4893,6 @@ ElementsTable.Dropdown = (function()
 
 		Creator.AddSignal(DropdownInner:GetPropertyChangedSignal("AbsolutePosition"), RecalculateListPosition)
 
-		-- แก้ไข event handler สำหรับ MouseButton1Click
 		Creator.AddSignal(DropdownInner.MouseButton1Click, function()
 			if Dropdown.IsToggling then
 				return
@@ -4812,12 +4906,10 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Open()
 			end
 			
-			-- รอสักครู่แล้วปลด flag
 			task.wait(0.1)
 			Dropdown.IsToggling = false
 		end)
 
-		-- แก้ไข event handler สำหรับ Touch input
 		Creator.AddSignal(DropdownInner.InputBegan, function(Input)
 			if Input.UserInputType == Enum.UserInputType.Touch then
 				if Dropdown.IsToggling then
@@ -4832,20 +4924,17 @@ ElementsTable.Dropdown = (function()
 					Dropdown:Open()
 				end
 				
-				-- รอสักครู่แล้วปลด flag
 				task.wait(0.1)
 				Dropdown.IsToggling = false
 			end
 		end)
 
-		-- Event สำหรับ SearchBox
 		if Dropdown.Searchable then
 			Creator.AddSignal(SearchBox:GetPropertyChangedSignal("Text"), function()
 				FilterItems(SearchBox.Text)
 			end)
 		end
 
-		-- แก้ไข event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
 			if
 				Input.UserInputType == Enum.UserInputType.MouseButton1
@@ -4857,14 +4946,12 @@ ElementsTable.Dropdown = (function()
 				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
 				
-				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
 				if
 					Mouse.X < AbsPos.X
 					or Mouse.X > AbsPos.X + AbsSize.X
 					or Mouse.Y < (AbsPos.Y - 20 - 1)
 					or Mouse.Y > AbsPos.Y + AbsSize.Y
 				then
-					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
 					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
 					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
 						   Mouse.Y >= ButtonAbsPos.Y and Mouse.Y <= ButtonAbsPos.Y + ButtonAbsSize.Y) then
@@ -4882,7 +4969,6 @@ ElementsTable.Dropdown = (function()
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
 			
-			-- ล้าง search box เมื่อเปิด dropdown
 			if Dropdown.Searchable then
 				SearchBox.Text = ""
 				FilterItems("")
@@ -4919,7 +5005,6 @@ ElementsTable.Dropdown = (function()
 			)
 			iconTween:Play()
 			
-			-- ปล่อย focus จาก search box
 			if Dropdown.Searchable then
 				SearchBox:ReleaseFocus(false)
 			end
@@ -4968,7 +5053,9 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:BuildDropdownList()
 			local Values = Dropdown.Values
-			local Buttons = {}
+			allButtons = {}
+			totalItems = #Values
+			loadedCount = 0
 
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
 				if not Element:IsA("UIListLayout") then
@@ -4976,152 +5063,51 @@ ElementsTable.Dropdown = (function()
 				end
 			end
 
-			local Count = 0
+			-- โหลดแค่ 50 อันแรก
+			local maxInitialLoad = 30
+			local loadLimit = math.min(totalItems, maxInitialLoad)
+			
+			for i = 1, loadLimit do
+				local Value = Values[i]
+				local Button, Table = self:CreateButton(Value, allButtons)
+				allButtons[Button] = Table
+			end
+			loadedCount = loadLimit
 
-			for Idx, Value in next, Values do
-				local Table = {}
-
-				Count = Count + 1
-
-				local ButtonSelector = New("Frame", {
-					Size = UDim2.fromOffset(4, 14),
-					BackgroundColor3 = Color3.fromRGB(100, 150, 255),
-					Position = UDim2.fromOffset(-1, 16),
-					AnchorPoint = Vector2.new(0, 0.5),
-					ThemeTag = {
-						BackgroundColor3 = "Accent",
-					},
-				}, {
-					New("UICorner", {
-						CornerRadius = UDim.new(0, 2),
-					}),
-					New("UIGradient", {
-						Color = ColorSequence.new{
-							ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 170, 255)),
-							ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 130, 255))
-						},
-						Rotation = 90,
-					}),
-				})
-
-				local ButtonLabel = New("TextLabel", {
-					FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
-					Text = Value,
-					TextColor3 = Color3.fromRGB(200, 200, 200),
-					TextSize = 13,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					Size = UDim2.fromScale(1, 1),
-					Position = UDim2.fromOffset(10, 0),
-					Name = "ButtonLabel",
-					ThemeTag = {
-						TextColor3 = "Text",
-					},
-				})
-
-				local Button = New("TextButton", {
-					Size = UDim2.new(1, -5, 0, 32),
-					BackgroundTransparency = 1,
-					ZIndex = 23,
-					Text = "",
-					Parent = DropdownScrollFrame,
-					ThemeTag = {
-						BackgroundColor3 = "DropdownOption",
-					},
-				}, {
-					ButtonSelector,
-					ButtonLabel,
-					New("UICorner", {
-						CornerRadius = UDim.new(0, 6),
-					}),
-					New("UIGradient", {
-						Color = ColorSequence.new{
-							ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-							ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
-						},
-						Rotation = 90,
-					}),
-				})
-
-				local Selected
-
-				if Config.Multi then
-					Selected = Dropdown.Value[Value]
-				else
-					Selected = Dropdown.Value == Value
-				end
-
-				local BackMotor, SetBackTransparency = Creator.SpringMotor(1, Button, "BackgroundTransparency")
-				local SelMotor, SetSelTransparency = Creator.SpringMotor(1, ButtonSelector, "BackgroundTransparency")
-				local SelectorSizeMotor = Flipper.SingleMotor.new(6)
-
-				SelectorSizeMotor:onStep(function(value)
-					ButtonSelector.Size = UDim2.new(0, 4, 0, value)
-				end)
-
-				Creator.AddSignal(Button.MouseEnter, function()
-					SetBackTransparency(Selected and 0.82 or 0.86)
-				end)
-				Creator.AddSignal(Button.MouseLeave, function()
-					SetBackTransparency(Selected and 0.86 or 1)
-				end)
-				Creator.AddSignal(Button.MouseButton1Down, function()
-					SetBackTransparency(0.90)
-				end)
-				Creator.AddSignal(Button.MouseButton1Up, function()
-					SetBackTransparency(Selected and 0.82 or 0.86)
-				end)
-
-				function Table:UpdateButton()
-					if Config.Multi then
-						Selected = Dropdown.Value[Value]
-						if Selected then
-							SetBackTransparency(0.86)
-						end
-					else
-						Selected = Dropdown.Value == Value
-						SetBackTransparency(Selected and 0.86 or 1)
+			-- ถ้ายังมีเหลือ ให้โหลดเมื่อ scroll
+			if totalItems > maxInitialLoad then
+				local isLoading = false
+				
+				Creator.AddSignal(DropdownScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
+					-- ถ้ากำลังค้นหาอยู่ ไม่ต้อง lazy load
+					if Dropdown.Searchable and SearchBox.Text ~= "" then
+						return
 					end
 
-					SelectorSizeMotor:setGoal(Flipper.Spring.new(Selected and 14 or 6, { frequency = 6 }))
-					SetSelTransparency(Selected and 0 or 1)
-				end
-
-				AddSignal(Button.Activated, function()
-					local Try = not Selected
-
-					if Dropdown:GetActiveValues() == 1 and not Try and not Config.AllowNull then
-					else
-						if Config.Multi then
-							Selected = Try
-							Dropdown.Value[Value] = Selected and true or nil
-						else
-							Selected = Try
-							Dropdown.Value = Selected and Value or nil
-
-							for _, OtherButton in next, Buttons do
-								OtherButton:UpdateButton()
-							end
+					local scrollPercent = DropdownScrollFrame.CanvasPosition.Y / math.max(1, DropdownScrollFrame.CanvasSize.Y.Offset - DropdownScrollFrame.AbsoluteSize.Y)
+					
+					if scrollPercent > 0.8 and not isLoading and loadedCount < totalItems then
+						isLoading = true
+						
+						local nextBatch = math.min(50, totalItems - loadedCount)
+						for i = loadedCount + 1, loadedCount + nextBatch do
+							local Value = Values[i]
+							local Button, Table = self:CreateButton(Value, allButtons)
+							allButtons[Button] = Table
 						end
-
-						Table:UpdateButton()
-						Dropdown:Display()
-
-						Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-						Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+						
+						loadedCount = loadedCount + nextBatch
+						RecalculateCanvasSize()
+						RecalculateListSize()
+						
+						task.wait(0.1)
+						isLoading = false
 					end
 				end)
-
-				Table:UpdateButton()
-				Dropdown:Display()
-
-				Buttons[Button] = Table
 			end
 
 			ListSizeX = 0
-			for Button, Table in next, Buttons do
+			for Button, Table in next, allButtons do
 				if Button.ButtonLabel then
 					if Button.ButtonLabel.TextBounds.X > ListSizeX then
 						ListSizeX = Button.ButtonLabel.TextBounds.X
@@ -5132,6 +5118,143 @@ ElementsTable.Dropdown = (function()
 
 			RecalculateCanvasSize()
 			RecalculateListSize()
+		end
+
+		function Dropdown:CreateButton(Value, Buttons)
+			local Table = {}
+
+			local ButtonSelector = New("Frame", {
+				Size = UDim2.fromOffset(4, 14),
+				BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+				Position = UDim2.fromOffset(-1, 16),
+				AnchorPoint = Vector2.new(0, 0.5),
+				ThemeTag = {
+					BackgroundColor3 = "Accent",
+				},
+			}, {
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 2),
+				}),
+				New("UIGradient", {
+					Color = ColorSequence.new{
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 170, 255)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 130, 255))
+					},
+					Rotation = 90,
+				}),
+			})
+
+			local ButtonLabel = New("TextLabel", {
+				FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+				Text = Value,
+				TextColor3 = Color3.fromRGB(200, 200, 200),
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				Position = UDim2.fromOffset(10, 0),
+				Name = "ButtonLabel",
+				ThemeTag = {
+					TextColor3 = "Text",
+				},
+			})
+
+			local Button = New("TextButton", {
+				Size = UDim2.new(1, -5, 0, 32),
+				BackgroundTransparency = 1,
+				ZIndex = 23,
+				Text = "",
+				Parent = DropdownScrollFrame,
+				ThemeTag = {
+					BackgroundColor3 = "DropdownOption",
+				},
+			}, {
+				ButtonSelector,
+				ButtonLabel,
+				New("UICorner", {
+					CornerRadius = UDim.new(0, 6),
+				}),
+				New("UIGradient", {
+					Color = ColorSequence.new{
+						ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+						ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
+					},
+					Rotation = 90,
+				}),
+			})
+
+			local Selected
+			if Config.Multi then
+				Selected = Dropdown.Value[Value]
+			else
+				Selected = Dropdown.Value == Value
+			end
+
+			local BackMotor, SetBackTransparency = Creator.SpringMotor(1, Button, "BackgroundTransparency")
+			local SelMotor, SetSelTransparency = Creator.SpringMotor(1, ButtonSelector, "BackgroundTransparency")
+			local SelectorSizeMotor = Flipper.SingleMotor.new(6)
+
+			SelectorSizeMotor:onStep(function(value)
+				ButtonSelector.Size = UDim2.new(0, 4, 0, value)
+			end)
+
+			Creator.AddSignal(Button.MouseEnter, function()
+				SetBackTransparency(Selected and 0.82 or 0.86)
+			end)
+			Creator.AddSignal(Button.MouseLeave, function()
+				SetBackTransparency(Selected and 0.86 or 1)
+			end)
+			Creator.AddSignal(Button.MouseButton1Down, function()
+				SetBackTransparency(0.90)
+			end)
+			Creator.AddSignal(Button.MouseButton1Up, function()
+				SetBackTransparency(Selected and 0.82 or 0.86)
+			end)
+
+			function Table:UpdateButton()
+				if Config.Multi then
+					Selected = Dropdown.Value[Value]
+					if Selected then
+						SetBackTransparency(0.86)
+					end
+				else
+					Selected = Dropdown.Value == Value
+					SetBackTransparency(Selected and 0.86 or 1)
+				end
+
+				SelectorSizeMotor:setGoal(Flipper.Spring.new(Selected and 14 or 6, { frequency = 6 }))
+				SetSelTransparency(Selected and 0 or 1)
+			end
+
+			AddSignal(Button.Activated, function()
+				local Try = not Selected
+
+				if Dropdown:GetActiveValues() == 1 and not Try and not Config.AllowNull then
+				else
+					if Config.Multi then
+						Selected = Try
+						Dropdown.Value[Value] = Selected and true or nil
+					else
+						Selected = Try
+						Dropdown.Value = Selected and Value or nil
+
+						for _, OtherButton in next, Buttons do
+							OtherButton:UpdateButton()
+						end
+					end
+
+					Table:UpdateButton()
+					Dropdown:Display()
+
+					Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+					Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+				end
+			end)
+
+			Table:UpdateButton()
+			return Button, Table
 		end
 
 		function Dropdown:SetValues(NewValues)
@@ -5178,7 +5301,6 @@ ElementsTable.Dropdown = (function()
 		end
 
 		Dropdown:BuildDropdownList()
-		Dropdown:Display()
 
 		local Defaults = {}
 
