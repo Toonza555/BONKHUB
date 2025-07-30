@@ -4530,7 +4530,7 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 			Searchable = Config.Searchable or false,
-			IsToggling = false -- เพิ่ม flag เพื่อป้องกันการเรียกซ้ำ
+			IsToggling = false
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
@@ -4612,6 +4612,31 @@ ElementsTable.Dropdown = (function()
 			},
 		})
 
+		local ClearIcon = New("ImageLabel", {
+			Image = "rbxassetid://10747384394",
+			Size = UDim2.fromOffset(14, 14),
+			Position = UDim2.new(1, -24, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			ImageColor3 = Color3.fromRGB(200, 100, 100),
+			ThemeTag = {
+				ImageColor3 = "Error",
+			},
+		})
+
+		local ClearButton = New("TextButton", {
+			Size = UDim2.fromOffset(20, 20),
+			Position = UDim2.new(1, -30, 0.5, 0),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			Text = "",
+		}, {
+			ClearIcon,
+			New("UICorner", {
+				CornerRadius = UDim.new(0, 4),
+			}),
+		})
+
 		local SearchBox = New("TextBox", {
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal),
 			Text = "",
@@ -4621,7 +4646,7 @@ ElementsTable.Dropdown = (function()
 			TextSize = 13,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(1, -32, 1, 0),
+			Size = UDim2.new(1, -60, 1, 0),
 			Position = UDim2.new(0, 28, 0, 0),
 			BackgroundTransparency = 1,
 			ClearTextOnFocus = false,
@@ -4661,10 +4686,12 @@ ElementsTable.Dropdown = (function()
 			}),
 			SearchIcon,
 			SearchBox,
+			ClearButton,
 		})
 
 		local SearchMotor, SetSearchTransparency = Creator.SpringMotor(0.1, SearchContainer, "BackgroundTransparency")
 		local SearchStrokeMotor, SetSearchStrokeTransparency = Creator.SpringMotor(0.6, SearchContainer.UIStroke, "Transparency")
+		local ClearMotor, SetClearTransparency = Creator.SpringMotor(1, ClearButton, "BackgroundTransparency")
 
 		Creator.AddSignal(SearchContainer.MouseEnter, function()
 			SetSearchTransparency(0.05)
@@ -4688,6 +4715,28 @@ ElementsTable.Dropdown = (function()
 			SetSearchTransparency(0.1)
 			SetSearchStrokeTransparency(0.6)
 			SearchIcon.ImageColor3 = Color3.fromRGB(150, 150, 150)
+		end)
+
+		Creator.AddSignal(ClearButton.MouseEnter, function()
+			SetClearTransparency(0.8)
+		end)
+
+		Creator.AddSignal(ClearButton.MouseLeave, function()
+			SetClearTransparency(1)
+		end)
+
+		Creator.AddSignal(ClearButton.MouseButton1Click, function()
+			if Config.Multi then
+				Dropdown.Value = {}
+			else
+				Dropdown.Value = nil
+			end
+			
+			Dropdown:BuildDropdownList()
+			Dropdown:Display()
+			
+			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 		end)
 
 		local DropdownListLayout = New("UIListLayout", {
@@ -4972,26 +5021,22 @@ ElementsTable.Dropdown = (function()
 			local Values = Dropdown.Values
 			local Buttons = {}
 
-			-- ลบ element เก่า
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
 				if not Element:IsA("UIListLayout") then
 					Element:Destroy()
 				end
 			end
 
-			-- ถ้า list เยอะมาก (>100) ให้โหลดแบบ lazy
 			local totalItems = #Values
-			local maxInitialLoad = 50 -- โหลดแค่ 100 อันแรก
+			local maxInitialLoad = 50
 			local loadLimit = math.min(totalItems, maxInitialLoad)
 			
-			-- สร้าง buttons แค่ส่วนแรก
 			for i = 1, loadLimit do
 				local Value = Values[i]
 				local Button, Table = self:CreateButton(Value, Buttons)
 				Buttons[Button] = Table
 			end
 
-			-- ถ้ายังมีเหลือ ให้โหลดเมื่อ scroll
 			if totalItems > maxInitialLoad then
 				local loadedCount = maxInitialLoad
 				local isLoading = false
@@ -4999,11 +5044,9 @@ ElementsTable.Dropdown = (function()
 				Creator.AddSignal(DropdownScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
 					local scrollPercent = DropdownScrollFrame.CanvasPosition.Y / (DropdownScrollFrame.CanvasSize.Y.Offset - DropdownScrollFrame.AbsoluteSize.Y)
 					
-					-- เมื่อ scroll ถึง 80% แล้วให้โหลดเพิ่ม
 					if scrollPercent > 0.8 and not isLoading and loadedCount < totalItems then
 						isLoading = true
 						
-						-- โหลดเพิ่มอีก 50 items
 						local nextBatch = math.min(50, totalItems - loadedCount)
 						for i = loadedCount + 1, loadedCount + nextBatch do
 							local Value = Values[i]
@@ -5015,13 +5058,12 @@ ElementsTable.Dropdown = (function()
 						RecalculateCanvasSize()
 						RecalculateListSize()
 						
-						task.wait(0.1) -- ป้องกันการโหลดซ้ำเร็วเกินไป
+						task.wait(0.1)
 						isLoading = false
 					end
 				end)
 			end
 
-			-- คำนวณขนาด
 			ListSizeX = 0
 			for Button, Table in next, Buttons do
 				if Button.ButtonLabel then
@@ -5036,7 +5078,6 @@ ElementsTable.Dropdown = (function()
 			RecalculateListSize()
 		end
 
-		-- แยกฟังก์ชันสร้าง button ออกมา
 		function Dropdown:CreateButton(Value, Buttons)
 			local Table = {}
 
@@ -5217,10 +5258,8 @@ ElementsTable.Dropdown = (function()
 			Library.Options[Idx] = nil
 		end
 
-		-- เริ่มต้นสร้าง dropdown list
 		Dropdown:BuildDropdownList()
 
-		-- ตั้งค่า default values
 		local Defaults = {}
 
 		if type(Config.Default) == "string" then
