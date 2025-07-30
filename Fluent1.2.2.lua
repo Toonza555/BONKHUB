@@ -4861,31 +4861,32 @@ ElementsTable.Dropdown = (function()
 			DropdownScrollFrame.CanvasSize = UDim2.fromOffset(0, DropdownListLayout.AbsoluteContentSize.Y)
 		end
 
+		local totalItems = 0
+		local loadedCount = 0
+		local allButtons = {}
+
 		local function FilterItems(searchText)
-        	if loadedCount and loadedCount < totalItems then
-        		local nextBatch = totalItems - loadedCount
-        		for i = loadedCount + 1, totalItems do
-        			local Value = Values[i]
-        			local Button, Table = Dropdown:CreateButton(Value, Buttons)
-        			Buttons[Button] = Table
-        		end
+			-- ถ้ายังโหลดไม่ครบและมีการค้นหา ให้โหลดทั้งหมดเลย
+			if loadedCount < totalItems and searchText ~= "" then
+				for i = loadedCount + 1, totalItems do
+					local Value = Dropdown.Values[i]
+					local Button, Table = Dropdown:CreateButton(Value, allButtons)
+					allButtons[Button] = Table
+				end
+				loadedCount = totalItems
+			end
+
+			for _, Element in next, DropdownScrollFrame:GetChildren() do
+				if not Element:IsA("UIListLayout") then
+					local Value = Element.ButtonLabel.Text
+					local shouldShow = searchText == "" or Value:lower():find(searchText:lower(), 1, true) ~= nil
+					Element.Visible = shouldShow
+				end
+			end
         
-        		loadedCount = totalItems
-        		RecalculateCanvasSize()
-        		RecalculateListSize()
-        	end
-    
-        	for _, Element in next, DropdownScrollFrame:GetChildren() do
-        		if not Element:IsA("UIListLayout") then
-        			local Value = Element.ButtonLabel.Text
-        			local shouldShow = searchText == "" or Value:lower():find(searchText:lower(), 1, true) ~= nil
-        			Element.Visible = shouldShow
-        		end
-        	end
-        
-        	RecalculateCanvasSize()
-        	RecalculateListSize()
-        end
+			RecalculateCanvasSize()
+			RecalculateListSize()
+		end
 
 		RecalculateListPosition()
 		RecalculateListSize()
@@ -5052,7 +5053,9 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:BuildDropdownList()
 			local Values = Dropdown.Values
-			local Buttons = {}
+			allButtons = {}
+			totalItems = #Values
+			loadedCount = 0
 
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
 				if not Element:IsA("UIListLayout") then
@@ -5060,22 +5063,28 @@ ElementsTable.Dropdown = (function()
 				end
 			end
 
-			local totalItems = #Values
+			-- โหลดแค่ 50 อันแรก
 			local maxInitialLoad = 50
 			local loadLimit = math.min(totalItems, maxInitialLoad)
 			
 			for i = 1, loadLimit do
 				local Value = Values[i]
-				local Button, Table = self:CreateButton(Value, Buttons)
-				Buttons[Button] = Table
+				local Button, Table = self:CreateButton(Value, allButtons)
+				allButtons[Button] = Table
 			end
+			loadedCount = loadLimit
 
+			-- ถ้ายังมีเหลือ ให้โหลดเมื่อ scroll
 			if totalItems > maxInitialLoad then
-				local loadedCount = maxInitialLoad
 				local isLoading = false
 				
 				Creator.AddSignal(DropdownScrollFrame:GetPropertyChangedSignal("CanvasPosition"), function()
-					local scrollPercent = DropdownScrollFrame.CanvasPosition.Y / (DropdownScrollFrame.CanvasSize.Y.Offset - DropdownScrollFrame.AbsoluteSize.Y)
+					-- ถ้ากำลังค้นหาอยู่ ไม่ต้อง lazy load
+					if Dropdown.Searchable and SearchBox.Text ~= "" then
+						return
+					end
+
+					local scrollPercent = DropdownScrollFrame.CanvasPosition.Y / math.max(1, DropdownScrollFrame.CanvasSize.Y.Offset - DropdownScrollFrame.AbsoluteSize.Y)
 					
 					if scrollPercent > 0.8 and not isLoading and loadedCount < totalItems then
 						isLoading = true
@@ -5083,8 +5092,8 @@ ElementsTable.Dropdown = (function()
 						local nextBatch = math.min(50, totalItems - loadedCount)
 						for i = loadedCount + 1, loadedCount + nextBatch do
 							local Value = Values[i]
-							local Button, Table = self:CreateButton(Value, Buttons)
-							Buttons[Button] = Table
+							local Button, Table = self:CreateButton(Value, allButtons)
+							allButtons[Button] = Table
 						end
 						
 						loadedCount = loadedCount + nextBatch
@@ -5098,7 +5107,7 @@ ElementsTable.Dropdown = (function()
 			end
 
 			ListSizeX = 0
-			for Button, Table in next, Buttons do
+			for Button, Table in next, allButtons do
 				if Button.ButtonLabel then
 					if Button.ButtonLabel.TextBounds.X > ListSizeX then
 						ListSizeX = Button.ButtonLabel.TextBounds.X
