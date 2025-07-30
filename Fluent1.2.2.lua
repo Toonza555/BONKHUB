@@ -4828,20 +4828,17 @@ ElementsTable.Dropdown = (function()
 					Dropdown:Open()
 				end
 				
-				-- รอสักครู่แล้วปลด flag
 				task.wait(0.1)
 				Dropdown.IsToggling = false
 			end
 		end)
 
-		-- Event สำหรับ SearchBox
 		if Dropdown.Searchable then
 			Creator.AddSignal(SearchBox:GetPropertyChangedSignal("Text"), function()
 				FilterItems(SearchBox.Text)
 			end)
 		end
 
-		-- แก้ไข event handler สำหรับการคลิกข้างนอก
 		Creator.AddSignal(UserInputService.InputBegan, function(Input)
 			if
 				Input.UserInputType == Enum.UserInputType.MouseButton1
@@ -4853,14 +4850,12 @@ ElementsTable.Dropdown = (function()
 				
 				local AbsPos, AbsSize = DropdownHolderFrame.AbsolutePosition, DropdownHolderFrame.AbsoluteSize
 				
-				-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown หรือไม่
 				if
 					Mouse.X < AbsPos.X
 					or Mouse.X > AbsPos.X + AbsSize.X
 					or Mouse.Y < (AbsPos.Y - 20 - 1)
 					or Mouse.Y > AbsPos.Y + AbsSize.Y
 				then
-					-- ตรวจสอบว่าคลิกอยู่ในพื้นที่ dropdown button หรือไม่
 					local ButtonAbsPos, ButtonAbsSize = DropdownInner.AbsolutePosition, DropdownInner.AbsoluteSize
 					if not (Mouse.X >= ButtonAbsPos.X and Mouse.X <= ButtonAbsPos.X + ButtonAbsSize.X and 
 						   Mouse.Y >= ButtonAbsPos.Y and Mouse.Y <= ButtonAbsPos.Y + ButtonAbsSize.Y) then
@@ -4878,7 +4873,6 @@ ElementsTable.Dropdown = (function()
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
 			
-			-- ล้าง search box เมื่อเปิด dropdown
 			if Dropdown.Searchable then
 				SearchBox.Text = ""
 				FilterItems("")
@@ -4915,7 +4909,6 @@ ElementsTable.Dropdown = (function()
 			)
 			iconTween:Play()
 			
-			-- ปล่อย focus จาก search box
 			if Dropdown.Searchable then
 				SearchBox:ReleaseFocus(false)
 			end
@@ -4963,6 +4956,7 @@ ElementsTable.Dropdown = (function()
 		end
 
 		function Dropdown:BuildDropdownList()
+		    task.spawn(function()
 			local Values = Dropdown.Values
 			local Buttons = {}
 
@@ -4973,7 +4967,7 @@ ElementsTable.Dropdown = (function()
 			end
 
 			local Count = 0
-            task.spawn(function()
+            
 			for Idx, Value in next, Values do
 				local Table = {}
 
@@ -5114,8 +5108,8 @@ ElementsTable.Dropdown = (function()
 				Dropdown:Display()
 
 				Buttons[Button] = Table
+				task.wait(.1)
 			end
-			end)
 
 			ListSizeX = 0
 			for Button, Table in next, Buttons do
@@ -5129,6 +5123,7 @@ ElementsTable.Dropdown = (function()
 
 			RecalculateCanvasSize()
 			RecalculateListSize()
+				end)
 		end
 
 		function Dropdown:SetValues(NewValues)
@@ -5219,7 +5214,6 @@ ElementsTable.Dropdown = (function()
 
 	return Element
 end)()
-
 
 ElementsTable.Paragraph = (function()
 	local Paragraph = {}
