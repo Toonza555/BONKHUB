@@ -5118,6 +5118,8 @@ ElementsTable.Dropdown = (function()
 
 			RecalculateCanvasSize()
 			RecalculateListSize()
+			
+			Dropdown:Display()
 		end
 
 		function Dropdown:CreateButton(Value, Buttons)
@@ -5254,6 +5256,9 @@ ElementsTable.Dropdown = (function()
 			end)
 
 			Table:UpdateButton()
+			--
+			Dropdown:Display()
+			--
 			return Button, Table
 		end
 
@@ -5337,7 +5342,6 @@ ElementsTable.Dropdown = (function()
 			Dropdown:BuildDropdownList()
 			Dropdown:Display()
 		end
-        Dropdown:Display()
 		Library.Options[Idx] = Dropdown
 		return Dropdown
 	end
