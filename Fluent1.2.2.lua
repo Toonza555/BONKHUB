@@ -5064,7 +5064,7 @@ ElementsTable.Dropdown = (function()
 			end
 
 			-- โหลดแค่ 50 อันแรก
-			local maxInitialLoad = 50
+			local maxInitialLoad = 30
 			local loadLimit = math.min(totalItems, maxInitialLoad)
 			
 			for i = 1, loadLimit do
