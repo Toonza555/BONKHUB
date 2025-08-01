@@ -5118,6 +5118,8 @@ ElementsTable.Dropdown = (function()
 
 			RecalculateCanvasSize()
 			RecalculateListSize()
+			
+			Dropdown:Display()
 		end
 
 		function Dropdown:CreateButton(Value, Buttons)
@@ -5254,6 +5256,9 @@ ElementsTable.Dropdown = (function()
 			end)
 
 			Table:UpdateButton()
+			--
+			Dropdown:Display()
+			--
 			return Button, Table
 		end
 
@@ -5321,19 +5326,22 @@ ElementsTable.Dropdown = (function()
 		end
 
 		if next(Defaults) then
-        	if Config.Multi then
-        		for i = 1, #Defaults do
-        			local Value = Defaults[i]
-        			Dropdown.Value[Value] = true
-        		end
-        	else
-        		Dropdown.Value = Defaults[1]
-        	end
-        
-        	Dropdown:BuildDropdownList()
-        	Dropdown:Display()
-        end
+			for i = 1, #Defaults do
+				local Index = Defaults[i]
+				if Config.Multi then
+					Dropdown.Value[Dropdown.Values[Index]] = true
+				else
+					Dropdown.Value = Dropdown.Values[Index]
+				end
 
+				if not Config.Multi then
+					break
+				end
+			end
+
+			Dropdown:BuildDropdownList()
+			Dropdown:Display()
+		end
 		Library.Options[Idx] = Dropdown
 		return Dropdown
 	end
