@@ -5337,7 +5337,7 @@ ElementsTable.Dropdown = (function()
 			Dropdown:BuildDropdownList()
 			Dropdown:Display()
 		end
-
+        Dropdown:Display()
 		Library.Options[Idx] = Dropdown
 		return Dropdown
 	end
