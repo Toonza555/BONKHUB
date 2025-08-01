@@ -5329,9 +5329,9 @@ ElementsTable.Dropdown = (function()
 					Dropdown.Value = Dropdown.Values[Index]
 				end
 
-				if not Config.Multi then
-					break
-				end
+				--if not Config.Multi then
+				--	break
+				--end
 			end
 
 			Dropdown:BuildDropdownList()
