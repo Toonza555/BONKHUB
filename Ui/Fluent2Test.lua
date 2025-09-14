@@ -5613,12 +5613,13 @@ ElementsTable.Slider = (function()
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 			Text = tostring(Config.Default),
 			TextSize = 12,
-			TextWrapped = true,
+			TextWrapped = false,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			ClearTextOnFocus = false,
 			BackgroundColor3 = Color3.fromRGB(40, 40, 40),
 			BackgroundTransparency = 0.1,
-			Size = UDim2.new(0, 100, 0, 18),
+			AutomaticSize = Enum.AutomaticSize.X, -- ✅ ให้ขยายความกว้างอัตโนมัติ
+			Size = UDim2.new(0, 0, 0, 18),       -- ✅ ความกว้างเริ่มต้น = 0 (จะปรับตามเนื้อหา)
 			Position = UDim2.new(0, -4, 0.5, 0),
 			AnchorPoint = Vector2.new(1, 0.5),
 			ThemeTag = {
@@ -5631,6 +5632,9 @@ ElementsTable.Slider = (function()
 			New("UIStroke", {
 				Thickness = 1,
 				Color = Color3.fromRGB(80, 80, 80),
+			}),
+			New("UITextSizeConstraint", {
+				MaxTextSize = 12, -- กันไม่ให้ใหญ่เกิน
 			}),
 		})
 
