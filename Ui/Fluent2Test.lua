@@ -5609,20 +5609,21 @@ ElementsTable.Slider = (function()
 			}),
 		})
 
+		-- ✅ เปลี่ยนจาก Label → TextBox (แก้ไขได้)
 		local SliderDisplay = New("TextBox", {
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 			Text = tostring(Config.Default),
 			TextSize = 12,
 			TextWrapped = false,
-			TextXAlignment = Enum.TextXAlignment.Right,
+			TextXAlignment = Enum.TextXAlignment.Center,
 			ClearTextOnFocus = false,
-			BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-			BackgroundTransparency = 0.1,
-			AutomaticSize = Enum.AutomaticSize.X, -- ✅ ให้ขยายความกว้างอัตโนมัติ
-			Size = UDim2.new(0, 0, 0, 18),       -- ✅ ความกว้างเริ่มต้น = 0 (จะปรับตามเนื้อหา)
+			AutomaticSize = Enum.AutomaticSize.X, -- ขยายอัตโนมัติตามตัวเลข
+			Size = UDim2.new(0, 50, 0, 18),
 			Position = UDim2.new(0, -4, 0.5, 0),
 			AnchorPoint = Vector2.new(1, 0.5),
+			BackgroundTransparency = 0.1,
 			ThemeTag = {
+				BackgroundColor3 = "InputBackground",
 				TextColor3 = "SubText",
 			},
 		}, {
@@ -5631,10 +5632,18 @@ ElementsTable.Slider = (function()
 			}),
 			New("UIStroke", {
 				Thickness = 1,
-				Color = Color3.fromRGB(80, 80, 80),
+				Color = Color3.fromRGB(90, 90, 90),
 			}),
 			New("UITextSizeConstraint", {
-				MaxTextSize = 12, -- กันไม่ให้ใหญ่เกิน
+				MaxTextSize = 12,
+			}),
+			New("UIPadding", {
+				PaddingLeft = UDim.new(0, 4),
+				PaddingRight = UDim.new(0, 4),
+			}),
+			New("UISizeConstraint", {
+				MinSize = Vector2.new(40, 18),
+				MaxSize = Vector2.new(80, 18),
 			}),
 		})
 
@@ -5659,33 +5668,22 @@ ElementsTable.Slider = (function()
 			SliderRail,
 		})
 
+		-- Dragging
 		Creator.AddSignal(SliderDot.InputBegan, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = true
 			end
 		end)
 
 		Creator.AddSignal(SliderDot.InputEnded, function(Input)
-			if
-				Input.UserInputType == Enum.UserInputType.MouseButton1
-				or Input.UserInputType == Enum.UserInputType.Touch
-			then
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 				Dragging = false
 			end
 		end)
 
 		Creator.AddSignal(UserInputService.InputChanged, function(Input)
 			if Dragging then
-				local position = nil
-				if Input.UserInputType == Enum.UserInputType.MouseMovement then
-					position = Input.Position
-				elseif Input.UserInputType == Enum.UserInputType.Touch then
-					position = Input.Position
-				end
-
+				local position = Input.Position
 				if position then
 					local SizeScale = math.clamp((position.X - SliderRail.AbsolutePosition.X) / SliderRail.AbsoluteSize.X, 0, 1)
 					Slider:SetValue(Slider.Min + ((Slider.Max - Slider.Min) * SizeScale))
@@ -5707,10 +5705,10 @@ ElementsTable.Slider = (function()
 			end
 		end)
 
-		Creator.AddSignal(SliderDisplay.FocusLost, function(enterPressed)
+		-- ✅ Input ตัวเลขเอง
+		Creator.AddSignal(SliderDisplay.FocusLost, function()
 			local text = SliderDisplay.Text
 			local num = tonumber(text)
-
 			if num then
 				num = math.clamp(num, Slider.Min, Slider.Max)
 				Slider:SetValue(num)
