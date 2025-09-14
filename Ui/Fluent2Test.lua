@@ -5609,7 +5609,6 @@ ElementsTable.Slider = (function()
 			}),
 		})
 
-		-- ✅ เปลี่ยนจาก Label → TextBox (แก้ไขได้)
 		local SliderDisplay = New("TextBox", {
 			FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json"),
 			Text = tostring(Config.Default),
@@ -5617,14 +5616,14 @@ ElementsTable.Slider = (function()
 			TextWrapped = false,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			ClearTextOnFocus = false,
-			AutomaticSize = Enum.AutomaticSize.X, -- ขยายอัตโนมัติตามตัวเลข
+			AutomaticSize = Enum.AutomaticSize.X,
 			Size = UDim2.new(0, 50, 0, 18),
 			Position = UDim2.new(0, -4, 0.5, 0),
 			AnchorPoint = Vector2.new(1, 0.5),
 			BackgroundTransparency = 0.1,
 			ThemeTag = {
-				BackgroundColor3 = "InputBackground",
-				TextColor3 = "SubText",
+				BackgroundColor3 = "InElementBorder",
+				TextColor3 = "Text",
 			},
 		}, {
 			New("UICorner", {
