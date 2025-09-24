@@ -5325,7 +5325,6 @@ local aa = {
             Input = Color3.fromRGB(45, 130, 100),
             InputFocused = Color3.fromRGB(10, 35, 25),
             InputIndicator = Color3.fromRGB(55, 150, 120),
-            InputIndicatorFocus = Color3.fromRGB(0, 168, 107),
             Dialog = Color3.fromRGB(20, 70, 55),
             DialogHolder = Color3.fromRGB(15, 65, 50),
             DialogHolderLine = Color3.fromRGB(15, 60, 45),
