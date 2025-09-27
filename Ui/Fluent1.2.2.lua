@@ -7832,18 +7832,16 @@ local InterfaceManager = {} do
 			Settings.Acrylic = false
 		end
 
-		section:AddSlider("WindowTransparency", {
-			Title = "Window Transparency",
-			Description = "Adjusts the window transparency.",
-			Default = 1,
-			Min = 0,
-			Max = 3,
-			Rounding = 1,
+		section:AddToggle("TransparentToggle", {
+			Title = "Transparency",
+			Description = "Makes the interface transparent.",
+			Default = Settings.Transparency,
 			Callback = function(Value)
-				Library:SetWindowTransparency(Value)
+				Library:ToggleTransparency(Value)
+				Settings.Transparency = Value
+                InterfaceManager:SaveSettings()
 			end
 		})
-
 
 		local MenuKeybind = section:AddKeybind("MenuKeybind", { Title = "Minimize Bind", Default = Library.MinimizeKey.Name or Settings.MenuKeybind })
 		MenuKeybind:OnChanged(function()
